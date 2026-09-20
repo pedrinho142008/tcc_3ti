@@ -3,296 +3,73 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel Admin — E.E.I.M</title>
+  <title>Painel Administrativo — E.E.I.M</title>
   <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
 </head>
-<body>
-  <div class="wrap">
-    <nav class="nav">
-      <a href="/painel-admin.html" class="nav-brand">👑 <span class="badge">Admin</span></a>
-      <button class="menu-btn">☰</button>
-      <div class="nav-links">
-        <a href="/" target="_blank">Ver site</a>
-        <a href="#" id="btn-sair">Sair</a>
+<body class="admin-body">
+  <div class="admin-wrap">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <div class="admin-brand-icon">E</div>
+        <div>
+          <div class="admin-brand-title">E.E.I.M</div>
+          <div class="admin-brand-sub">Painel Administrativo</div>
+        </div>
       </div>
-    </nav>
 
-    <div class="painel-head">
-      <div>
-        <h1>Olá, <span id="nome-user">—</span></h1>
-        <p>Gerencie todo o conteúdo do site</p>
+      <nav class="admin-nav">
+        <button class="admin-nav-item active" data-aba="posts">
+          <span class="admin-nav-icon">▤</span>
+          <span>Postagens</span>
+        </button>
+        <button class="admin-nav-item" data-aba="avisos">
+          <span class="admin-nav-icon">◈</span>
+          <span>Avisos</span>
+        </button>
+        <button class="admin-nav-item" data-aba="eventos">
+          <span class="admin-nav-icon">▦</span>
+          <span>Eventos</span>
+        </button>
+        <button class="admin-nav-item" data-aba="merenda">
+          <span class="admin-nav-icon">◐</span>
+          <span>Merenda</span>
+        </button>
+        <button class="admin-nav-item" data-aba="usuarios">
+          <span class="admin-nav-icon">◇</span>
+          <span>Usuários</span>
+        </button>
+      </nav>
+
+      <div class="admin-sidebar-footer">
+        <a href="/" target="_blank" class="admin-link-sec">Ver site público</a>
+        <button id="btn-sair" class="admin-link-sec admin-link-danger">Sair</button>
       </div>
-    </div>
+    </aside>
 
-    <div class="tabs">
-      <button class="tab active" data-aba="posts">📰 Postagens</button>
-      <button class="tab" data-aba="avisos">📢 Avisos</button>
-      <button class="tab" data-aba="eventos">📅 Eventos</button>
-      <button class="tab" data-aba="merenda">🍽️ Merenda</button>
-      <button class="tab" data-aba="usuarios">👥 Usuários</button>
-    </div>
+    <!-- CONTEÚDO -->
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <h1 class="admin-title" id="admin-titulo">Postagens</h1>
+          <p class="admin-subtitle" id="admin-sub">Gerencie as publicações do site</p>
+        </div>
+        <div class="admin-user">
+          <div class="admin-user-avatar" id="user-avatar">A</div>
+          <div>
+            <div class="admin-user-name" id="user-nome">—</div>
+            <div class="admin-user-role" id="user-cargo">—</div>
+          </div>
+        </div>
+      </header>
 
-    <div id="conteudo"></div>
+      <div id="admin-conteudo"></div>
+    </main>
+
   </div>
 
-  <script type="module">
-    import { api, esc, fmtData, fmtCurta, mostrarLoading, esconderLoading, periodoNome } from "/assets/js/shared.js";
-    
-
-    let user;
-    try { user = await api("/api/users/me"); }
-    catch { window.location.href = "/login.html"; }
-    document.getElementById("nome-user").textContent = user.nome;
-
-    document.getElementById("btn-sair").addEventListener("click", async (e) => {
-      e.preventDefault();
-      await api("/api/users/logout", { method: "POST" });
-      window.location.href = "/";
-    });
-
-    document.querySelectorAll(".tab").forEach(t => {
-      t.addEventListener("click", () => {
-        document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
-        t.classList.add("active");
-        carregar(t.dataset.aba);
-      });
-    });
-
-    async function carregar(aba) {
-      const el = document.getElementById("conteudo");
-      mostrarLoading();
-      try {
-        el.innerHTML = await render(aba);
-        bind(aba);
-      } catch (e) {
-        el.innerHTML = `<div class="card"><p style="color:#e53e3e">Erro: ${esc(e.message)}</p></div>`;
-      } finally { esconderLoading(); }
-    }
-
-    async function render(aba) {
-      if (aba === "posts") {
-        const posts = await api("/api/posts");
-        return `
-          <div class="card">
-            <h2>➕ Nova postagem</h2>
-            <form id="f-post">
-              <label>Título<input name="titulo" required /></label>
-              <label>Texto<textarea name="texto" required></textarea></label>
-              <label>URL da imagem<input name="imagem_url" placeholder="https://..." /></label>
-              <label>Categoria
-                <select name="categoria">
-                  <option value="noticia">Notícia</option>
-                  <option value="evento">Evento</option>
-                  <option value="aviso">Aviso</option>
-                  <option value="conquista">Conquista</option>
-                </select>
-              </label>
-              <label><input type="checkbox" name="fixada" /> Fixar no topo</label>
-              <button type="submit">Publicar</button>
-            </form>
-          </div>
-          <div class="card">
-            <h2>Postagens (${posts.length})</h2>
-            ${posts.map(p => `
-              <div class="post">
-                <div class="post-head">
-                  <h3 class="post-title">${esc(p.titulo)}</h3>
-                  <span class="chip ${p.categoria}">${p.categoria}</span>
-                </div>
-                <p class="post-date">${fmtData(p.criado_em)}</p>
-                <p class="post-body">${esc(p.texto)}</p>
-                <button class="btn btn-danger del-post" data-id="${p.id}" style="margin-top:12px;padding:8px 16px;font-size:0.78rem">🗑️ Excluir</button>
-              </div>`).join("") || "<p>Nenhuma.</p>"}
-          </div>`;
-      }
-
-      if (aba === "avisos") {
-        const avisos = await api("/api/announcements");
-        return `
-          <div class="card">
-            <h2>➕ Novo aviso</h2>
-            <form id="f-aviso">
-              <label>Texto<textarea name="texto" required></textarea></label>
-              <label><input type="checkbox" name="urgente" /> Urgente</label>
-              <button type="submit">Publicar</button>
-            </form>
-          </div>
-          <div class="card">
-            <h2>Avisos ativos (${avisos.length})</h2>
-            ${avisos.map(a => `
-              <div class="aviso-banner ${a.urgente ? "urgente" : ""}" style="margin-bottom:10px">
-                <span style="flex:1">${a.urgente ? "🚨" : "📢"} ${esc(a.texto)}</span>
-                <button class="btn btn-danger del-aviso" data-id="${a.id}" style="padding:6px 12px;font-size:0.72rem">Excluir</button>
-              </div>`).join("") || "<p>Nenhum.</p>"}
-          </div>`;
-      }
-
-      if (aba === "eventos") {
-        const evs = await api("/api/events");
-        return `
-          <div class="card">
-            <h2>➕ Novo evento</h2>
-            <form id="f-evento">
-              <label>Título<input name="titulo" required /></label>
-              <label>Descrição<textarea name="descricao"></textarea></label>
-              <label>Local<input name="local" /></label>
-              <label>Início<input type="datetime-local" name="data_inicio" required /></label>
-              <label>Fim<input type="datetime-local" name="data_fim" /></label>
-              <button type="submit">Criar</button>
-            </form>
-          </div>
-          <div class="card">
-            <h2>Eventos (${evs.length})</h2>
-            <div class="grid-auto">
-            ${evs.map(e => `
-              <div class="tile">
-                <div class="tile-date">${fmtData(e.data_inicio)}</div>
-                <div class="tile-title">${esc(e.titulo)}</div>
-                ${e.descricao ? `<div class="tile-text">${esc(e.descricao)}</div>` : ""}
-                <button class="btn btn-danger del-evento" data-id="${e.id}" style="margin-top:10px;padding:6px 12px;font-size:0.72rem">Excluir</button>
-              </div>`).join("") || "<p>Nenhum.</p>"}
-            </div>
-          </div>`;
-      }
-
-      if (aba === "merenda") {
-        const ms = await api("/api/meals");
-        return `
-          <div class="card">
-            <h2>➕ Cadastrar merenda</h2>
-            <form id="f-merenda">
-              <label>Data<input type="date" name="data" required /></label>
-              <label>Período
-                <select name="periodo" required>
-                  <option value="manha">Manhã</option>
-                  <option value="almoco">Almoço</option>
-                  <option value="tarde">Tarde</option>
-                  <option value="noite">Noite</option>
-                </select>
-              </label>
-              <label>Descrição<textarea name="descricao" required></textarea></label>
-              <button type="submit">Salvar</button>
-            </form>
-          </div>
-          <div class="card">
-            <h2>Merenda cadastrada (${ms.length})</h2>
-            <div class="grid-auto">
-            ${ms.map(m => `
-              <div class="tile">
-                <div class="tile-date">${fmtCurta(m.data)}</div>
-                <span class="tile-tag">${periodoNome(m.periodo)}</span>
-                <div class="tile-text">${esc(m.descricao)}</div>
-                <button class="btn btn-danger del-merenda" data-id="${m.id}" style="margin-top:10px;padding:6px 12px;font-size:0.72rem">Excluir</button>
-              </div>`).join("") || "<p>Nenhuma.</p>"}
-            </div>
-          </div>`;
-      }
-
-      if (aba === "usuarios") {
-        const us = await api("/api/users");
-        return `
-          <div class="card">
-            <h2>➕ Novo usuário</h2>
-            <form id="f-user">
-              <label>Nome<input name="nome" required /></label>
-              <label>Email<input type="email" name="email" required /></label>
-              <label>Senha<input type="password" name="senha" required /></label>
-              <label>Tipo
-                <select name="tipo">
-                  <option value="funcionario">Funcionário</option>
-                  <option value="admin">Administrador</option>
-                </select>
-              </label>
-              <label>Cargo<input name="cargo" placeholder="Ex: Merendeira" /></label>
-              <button type="submit">Criar</button>
-            </form>
-          </div>
-          <div class="card">
-            <h2>Usuários (${us.length})</h2>
-            ${us.map(u => `
-              <div class="contato-row">
-                <div class="ico">${u.tipo === "admin" ? "👑" : "👤"}</div>
-                <div>
-                  <div class="lbl">${u.tipo} • ${esc(u.cargo || "—")}</div>
-                  <div class="val">${esc(u.nome)}</div>
-                  <div style="font-size:0.8rem;color:#8895a7">${esc(u.email)}</div>
-                </div>
-              </div>`).join("")}
-          </div>`;
-      }
-    }
-
-    function bind(aba) {
-      const sub = (id, fn) => document.getElementById(id)?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-        mostrarLoading();
-        try { await fn(fd); carregar(aba); }
-        catch (err) { alert("Erro: " + err.message); esconderLoading(); }
-      });
-
-      if (aba === "posts") {
-        sub("f-post", (fd) => api("/api/posts", { method: "POST", body: JSON.stringify({
-          titulo: fd.get("titulo"), texto: fd.get("texto"),
-          imagem_url: fd.get("imagem_url") || null,
-          categoria: fd.get("categoria"), fixada: fd.get("fixada") === "on",
-        })}));
-        document.querySelectorAll(".del-post").forEach(b => b.addEventListener("click", async () => {
-          if (!confirm("Excluir?")) return;
-          mostrarLoading();
-          await api("/api/posts/" + b.dataset.id, { method: "DELETE" });
-          carregar("posts");
-        }));
-      }
-
-      if (aba === "avisos") {
-        sub("f-aviso", (fd) => api("/api/announcements", { method: "POST", body: JSON.stringify({
-          texto: fd.get("texto"), urgente: fd.get("urgente") === "on",
-        })}));
-        document.querySelectorAll(".del-aviso").forEach(b => b.addEventListener("click", async () => {
-          if (!confirm("Excluir?")) return;
-          mostrarLoading();
-          await api("/api/announcements/" + b.dataset.id, { method: "DELETE" });
-          carregar("avisos");
-        }));
-      }
-
-      if (aba === "eventos") {
-        sub("f-evento", (fd) => api("/api/events", { method: "POST", body: JSON.stringify({
-          titulo: fd.get("titulo"), descricao: fd.get("descricao"), local: fd.get("local"),
-          data_inicio: new Date(fd.get("data_inicio")).toISOString(),
-          data_fim: fd.get("data_fim") ? new Date(fd.get("data_fim")).toISOString() : null,
-        })}));
-        document.querySelectorAll(".del-evento").forEach(b => b.addEventListener("click", async () => {
-          if (!confirm("Excluir?")) return;
-          mostrarLoading();
-          await api("/api/events/" + b.dataset.id, { method: "DELETE" });
-          carregar("eventos");
-        }));
-      }
-
-      if (aba === "merenda") {
-        sub("f-merenda", (fd) => api("/api/meals", { method: "POST", body: JSON.stringify({
-          data: fd.get("data"), periodo: fd.get("periodo"), descricao: fd.get("descricao"),
-        })}));
-        document.querySelectorAll(".del-merenda").forEach(b => b.addEventListener("click", async () => {
-          if (!confirm("Excluir?")) return;
-          mostrarLoading();
-          await api("/api/meals/" + b.dataset.id, { method: "DELETE" });
-          carregar("merenda");
-        }));
-      }
-
-      if (aba === "usuarios") {
-        sub("f-user", (fd) => api("/api/users", { method: "POST", body: JSON.stringify({
-          nome: fd.get("nome"), email: fd.get("email"), senha: fd.get("senha"),
-          tipo: fd.get("tipo"), cargo: fd.get("cargo"),
-        })}));
-      }
-    }
-
-    carregar("posts");
-  </script>
-  <script src="/assets/js/menu.js"></script>
+  <script type="module" src="/assets/js/painel-admin.js"></script>
 </body>
 </html>
