@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel Funcionário — E.E.I.M</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="/painel-func.html" class="nav-brand">👤 <span class="badge">Funcionário</span></a>
+      <button class="menu-btn">☰</button>
+      <div class="nav-links">
+        <a href="/" target="_blank">Ver site</a>
+        <a href="#" id="btn-sair">Sair</a>
+      </div>
+    </nav>
+
+    <div class="painel-head">
+      <div>
+        <h1>Olá, <span id="nome-user">—</span></h1>
+        <p>Registre a merenda do dia</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Cadastrar Merenda</h2>
+      <form id="f-merenda">
+        <label>Data<input type="date" id="data" required /></label>
+        <label>Período
+          <select id="periodo" required>
+            <option value="manha">Manhã</option>
+            <option value="almoco">Almoço</option>
+            <option value="tarde">Tarde</option>
+            <option value="noite">Noite</option>
+          </select>
+        </label>
+        <label>Descrição<textarea id="descricao" required placeholder="Ex: Arroz, feijão, frango e salada"></textarea></label>
+        <button type="submit">Salvar merenda</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Merendas recentes</h2>
+      <div id="lista" class="grid-auto"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { api, esc, fmtData, fmtCurta, mostrarLoading, esconderLoading, periodoNome } from "/assets/js/shared.js";
+    
+
+    let user;
+    try { user = await api("/api/users/me"); }
+    catch { window.location.href = "/login.html"; }
+    document.getElementById("nome-user").textContent = user.nome;
+    document.getElementById("data").value = new Date().toISOString().slice(0, 10);
+
+    document.getElementById("btn-sair").addEventListener("click", async (e) => {
+      e.preventDefault();
+      await api("/api/users/logout", { method: "POST" });
+      window.location.href = "/";
+    });
+
+    document.getElementById("f-merenda").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      mostrarLoading("Salvando...");
+      try {
+        await api("/api/meals", {
+          method: "POST",
+          body: JSON.stringify({
+            data: document.getElementById("data").value,
+            periodo: document.getElementById("periodo").value,
+            descricao: document.getElementById("descricao").value,
+          }),
+        });
+        document.getElementById("descricao").value = "";
+        await listar();
+      } catch (err) { alert("Erro: " + err.message); }
+      finally { esconderLoading(); }
+    });
+
+    async function listar() {
+      const lista = await api("/api/meals");
+      document.getElementById("lista").innerHTML = lista.length
+        ? lista.slice(0, 12).map(m => `
+            <div class="tile">
+              <div class="tile-date">${fmtCurta(m.data)}</div>
+              <span class="tile-tag">${periodoNome(m.periodo)}</span>
+              <div class="tile-text">${esc(m.descricao)}</div>
+            </div>`).join("")
+        : "<p>Nenhuma.</p>";
+    }
+
+    listar();
+  </script>
+  <script src="/assets/js/menu.js"></script>
+</body>
+</html>

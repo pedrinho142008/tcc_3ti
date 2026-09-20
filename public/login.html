@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — E.E.I.M</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="/" class="nav-brand">🏫 E.E.I.M <span class="badge">Ielmo Marinho</span></a>
+      <button class="menu-btn">☰</button>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/eventos.html">Eventos</a>
+        <a href="/merenda.html">Merenda</a>
+        <a href="/contato.html">Contato</a>
+        <a href="/login.html" class="active">Login</a>
+        <a href="#" data-portal class="cta">Portal do Estudante</a>
+      </div>
+    </nav>
+
+    <div class="card login-wrap">
+      <div class="login-head">
+        <h1>🔐 Login</h1>
+        <p>Acesso restrito a funcionários e administradores</p>
+      </div>
+
+      <form id="form-login">
+        <label>Email
+          <input type="email" id="email" required placeholder="seu@email.com" autocomplete="username" />
+        </label>
+        <label>Senha
+          <input type="password" id="senha" required placeholder="••••••••" autocomplete="current-password" />
+        </label>
+        <button type="submit" id="btn-entrar">Entrar</button>
+        <p id="erro" class="erro-msg"></p>
+      </form>
+
+      <p style="text-align:center;margin-top:22px;font-size:0.83rem;color:#8895a7">
+        É aluno? <a href="#" data-portal style="color:#2a5298;font-weight:700">Acesse o Portal do Estudante</a>
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { api, initConfig, mostrarLoading, esconderLoading } from "/assets/js/shared.js";
+    
+    initConfig();
+
+    document.getElementById("form-login").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const senha = document.getElementById("senha").value;
+      const erro = document.getElementById("erro");
+      erro.textContent = "";
+      mostrarLoading("Entrando...");
+
+      try {
+        const user = await api("/api/users/login", {
+          method: "POST",
+          body: JSON.stringify({ email, senha }),
+        });
+        window.location.href = user.tipo === "admin" ? "/painel-admin.html" : "/painel-func.html";
+      } catch (err) {
+        erro.textContent = err.message;
+        esconderLoading();
+      }
+    });
+  </script>
+  <script src="/assets/js/menu.js"></script>
+</body>
+</html>

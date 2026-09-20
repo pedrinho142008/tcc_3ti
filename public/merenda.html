@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Merenda — E.E.I.M</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="/" class="nav-brand">🏫 E.E.I.M <span class="badge">Ielmo Marinho</span></a>
+      <button class="menu-btn">☰</button>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/eventos.html">Eventos</a>
+        <a href="/merenda.html" class="active">Merenda</a>
+        <a href="/contato.html">Contato</a>
+        <a href="/login.html">Login</a>
+        <a href="#" data-portal class="cta">Portal do Estudante</a>
+      </div>
+    </nav>
+
+    <div class="card">
+      <h2>Cardápio da Semana</h2>
+      <div id="lista" class="grid-auto"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { api, esc, fmtCurta, initConfig, periodoNome } from "/assets/js/shared.js";
+     initConfig();
+
+    const lista = await api("/api/meals");
+    document.getElementById("lista").innerHTML = lista.length
+      ? lista.map(m => `
+          <div class="tile">
+            <div class="tile-date">${fmtCurta(m.data)}</div>
+            <span class="tile-tag">${periodoNome(m.periodo)}</span>
+            <div class="tile-text">${esc(m.descricao)}</div>
+          </div>`).join("")
+      : "<p style='color:#8895a7'>Nenhuma merenda cadastrada.</p>";
+  </script>
+  <script src="/assets/js/menu.js"></script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eventos — E.E.I.M</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="/" class="nav-brand">🏫 E.E.I.M <span class="badge">Ielmo Marinho</span></a>
+      <button class="menu-btn">☰</button>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/eventos.html" class="active">Eventos</a>
+        <a href="/merenda.html">Merenda</a>
+        <a href="/contato.html">Contato</a>
+        <a href="/login.html">Login</a>
+        <a href="#" data-portal class="cta">Portal do Estudante</a>
+      </div>
+    </nav>
+
+    <div class="card">
+      <h2>Todos os Eventos</h2>
+      <div id="lista" class="grid-auto"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    
+     initConfig();
+
+    const
+cat > public/eventos.html << 'EOF'
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eventos — E.E.I.M</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="/" class="nav-brand">🏫 E.E.I.M <span class="badge">Ielmo Marinho</span></a>
+      <button class="menu-btn">☰</button>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/eventos.html" class="active">Eventos</a>
+        <a href="/merenda.html">Merenda</a>
+        <a href="/contato.html">Contato</a>
+        <a href="/login.html">Login</a>
+        <a href="#" data-portal class="cta">Portal do Estudante</a>
+      </div>
+    </nav>
+
+    <div class="card">
+      <h2>Todos os Eventos</h2>
+      <div id="lista" class="grid-auto"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { api, esc, fmtData, initConfig } from "/assets/js/shared.js";
+     initConfig();
+
+    const evs = await api("/api/events");
+    document.getElementById("lista").innerHTML = evs.length
+      ? evs.map(e => `
+          <div class="tile">
+            <div class="tile-date">${fmtData(e.data_inicio)}</div>
+            <div class="tile-title">${esc(e.titulo)}</div>
+            ${e.descricao ? `<div class="tile-text">${esc(e.descricao)}</div>` : ""}
+            ${e.local ? `<div class="tile-loc">📍 ${esc(e.local)}</div>` : ""}
+          </div>`).join("")
+      : "<p style='color:#8895a7'>Nenhum evento agendado.</p>";
+  </script>
+  <script src="/assets/js/menu.js"></script>
+</body>
+</html>

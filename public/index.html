@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E.E.I.M — Escola Estadual Ielmo Marinho</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="/" class="nav-brand">🏫 E.E.I.M <span class="badge">Ielmo Marinho</span></a>
+      <button class="menu-btn" type="button" aria-label="Menu">☰</button>
+      <div class="nav-links">
+        <a href="/" class="active">Home</a>
+        <a href="/eventos.html">Eventos</a>
+        <a href="/merenda.html">Merenda</a>
+        <a href="/contato.html">Contato</a>
+        <a href="/login.html">Login</a>
+        <a href="#" data-portal class="cta">Portal do Estudante</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <h1>Bem-vindo à <span>E.E.I.M</span></h1>
+      <p>Escola Estadual Ielmo Marinho — Educação pública de qualidade no coração do Rio Grande do Norte.</p>
+      <div class="hero-actions">
+        <a href="#" data-portal class="btn">🎓 Portal do Estudante</a>
+        <a href="/contato.html" class="btn btn-outline">📍 Como chegar</a>
+      </div>
+    </section>
+
+    <div id="avisos"></div>
+
+    <section class="card">
+      <h2>Últimas Postagens</h2>
+      <div id="lista-posts"><p class="muted">Carregando...</p></div>
+    </section>
+
+    <section class="card">
+      <h2>Merenda de Hoje</h2>
+      <div id="merenda-hoje" class="grid-auto"><p class="muted">Carregando...</p></div>
+    </section>
+
+    <section class="card">
+      <h2>Próximos Eventos</h2>
+      <div id="lista-eventos" class="grid-auto"><p class="muted">Carregando...</p></div>
+    </section>
+
+    <footer class="rodape">
+      <strong>E.E.I.M Escola Estadual Ielmo Marinho</strong><br>
+      R. Jose Camilo Bezerra, 257-249 • Ielmo Marinho - RN<br>
+      (84) 99106-4898
+    </footer>
+  </div>
+
+  <!-- CONTEÚDO (módulo ES) -->
+  <script type="module">
+    import { api, esc, fmtData, fmtCurta, initConfig, periodoNome } from "/assets/js/shared.js";
+
+    initConfig();
+
+    // Carrega tudo em paralelo
+    const [avisos, posts, merenda, eventos] = await Promise.all([
+      api("/api/announcements").catch(() => []),
+      api("/api/posts").catch(() => []),
+      api("/api/meals/hoje").catch(() => []),
+      api("/api/events").catch(() => []),
+    ]);
+
+    // Avisos
+    if (avisos.length) {
+      document.getElementById("avisos").innerHTML = avisos.map(a =>
+        `<div class="aviso-banner ${a.urgente ? "urgente" : ""}">
+          <span style="font-size:1.3rem">${a.urgente ? "🚨" : "📢"}</span>
+          <span>${esc(a.texto)}</span>
+        </div>`).join("");
+    }
+
+    // Posts
+    document.getElementById("lista-posts").innerHTML = posts.length
+      ? posts.map(p => `
+          <article class="post">
+            <div class="post-head">
+              <h3 class="post-title">${esc(p.titulo)}</h3>
+              <span class="chip ${p.categoria}">${p.categoria}</span>
+            </div>
+            <p class="post-date">${fmtData(p.criado_em)}</p>
+            ${p.imagem_url ? `<img class="post-img" src="${esc(p.imagem_url)}" alt="" loading="lazy">` : ""}
+            <p class="post-body">${esc(p.texto)}</p>
+            <button class="post-more" type="button">Ler mais ▼</button>
+          </article>`).join("")
+      : `<p class="muted">Nenhuma postagem ainda.</p>`;
+
+    // Merenda
+    document.getElementById("merenda-hoje").innerHTML = merenda.length
+      ? merenda.map(m => `
+          <div class="tile">
+            <div class="tile-date">${fmtCurta(m.data)}</div>
+            <span class="tile-tag">${periodoNome(m.periodo)}</span>
+            <div class="tile-text">${esc(m.descricao)}</div>
+          </div>`).join("")
+      : `<p class="muted" style="grid-column:1/-1;text-align:center;padding:20px">Nenhuma merenda cadastrada para hoje.</p>`;
+
+    // Eventos
+    document.getElementById("lista-eventos").innerHTML = eventos.length
+      ? eventos.slice(0, 4).map(e => `
+          <div class="tile">
+            <div class="tile-date">${fmtData(e.data_inicio)}</div>
+            <div class="tile-title">${esc(e.titulo)}</div>
+            ${e.descricao ? `<div class="tile-text">${esc(e.descricao)}</div>` : ""}
+            ${e.local ? `<div class="tile-loc">📍 ${esc(e.local)}</div>` : ""}
+          </div>`).join("")
+      : `<p class="muted" style="grid-column:1/-1;text-align:center;padding:20px">Nenhum evento agendado.</p>`;
+
+    // Toggle dos posts
+    document.querySelectorAll(".post-more").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const art = btn.closest(".post");
+        art.classList.toggle("expanded");
+        btn.textContent = art.classList.contains("expanded") ? "Ver menos ▲" : "Ler mais ▼";
+      });
+    });
+  </script>
+  <script src="/assets/js/menu.js"></script>
+</body>
+</html>

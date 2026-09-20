@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contato — E.E.I.M</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="/" class="nav-brand">🏫 E.E.I.M <span class="badge">Ielmo Marinho</span></a>
+      <button class="menu-btn">☰</button>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/eventos.html">Eventos</a>
+        <a href="/merenda.html">Merenda</a>
+        <a href="/contato.html" class="active">Contato</a>
+        <a href="/login.html">Login</a>
+        <a href="#" data-portal class="cta">Portal do Estudante</a>
+      </div>
+    </nav>
+
+    <div class="card">
+      <h2>Localização</h2>
+      <div class="map-wrap">
+        <iframe src="https://www.google.com/maps?q=Escola+Estadual+Ielmo+Marinho,+Ielmo+Marinho+-+RN&output=embed&t=k" loading="lazy"></iframe>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=Escola+Estadual+Ielmo+Marinho+Ielmo+Marinho+RN" target="_blank">🗺️ Traçar rota</a>
+        <a class="btn btn-sec" href="https://www.google.com/maps/@-5.8345,-35.5456,60m/data=!3m1!1e3" target="_blank">🛰️ Satélite</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Informações de Contato</h2>
+
+      <div class="contato-row">
+        <div class="ico">🏫</div>
+        <div>
+          <div class="lbl">Nome</div>
+          <div class="val">E.E.I.M Escola Estadual Ielmo Marinho</div>
+        </div>
+      </div>
+
+      <div class="contato-row">
+        <div class="ico">📍</div>
+        <div>
+          <div class="lbl">Endereço</div>
+          <div class="val">R. Jose Camilo Bezerra, 257-249<br>Ielmo Marinho - RN, 59490-000</div>
+        </div>
+      </div>
+
+      <div class="contato-row">
+        <div class="ico">📞</div>
+        <div>
+          <div class="lbl">Telefone</div>
+          <div class="val"><a href="tel:+5584991064898">(84) 99106-4898</a></div>
+        </div>
+      </div>
+
+      <div class="contato-row">
+        <div class="ico">🕐</div>
+        <div>
+          <div class="lbl">Horário</div>
+          <div class="val">Segunda a sexta • 07:00 às 17:00</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
+        <a class="btn" href="tel:+5584991064898">📞 Ligar</a>
+        <a class="btn btn-sec" href="https://wa.me/5584991064898" target="_blank">💬 WhatsApp</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initConfig } from "/assets/js/shared.js";
+     initConfig();
+  </script>
+  <script src="/assets/js/menu.js"></script>
+</body>
+</html>
