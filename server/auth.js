@@ -3,7 +3,11 @@ import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 dotenv.config();
 
-const SECRET = process.env.JWT_SECRET || "dev-secret";
+const SECRET =
+  process.env.JWT_SECRET ||
+  process.env.SUPABASE_JWT_SECRET ||
+  "dev-secret-mude-isto";
+
 const TTL = "8h";
 
 export const hashSenha = (s) => bcrypt.hashSync(s, 10);
@@ -20,12 +24,17 @@ export function gerarToken(user) {
 export function middlewareAuth(req, res, next) {
   const token = req.cookies?.token;
   if (!token) return res.status(401).json({ erro: "Não autenticado" });
-  try { req.user = jwt.verify(token, SECRET); next(); }
-  catch { return res.status(401).json({ erro: "Sessão expirada" }); }
+  try {
+    req.user = jwt.verify(token, SECRET);
+    next();
+  } catch {
+    return res.status(401).json({ erro: "Sessão expirada" });
+  }
 }
 
 export function middlewareAdmin(req, res, next) {
-  if (req.user?.tipo !== "admin") return res.status(403).json({ erro: "Só admin" });
+  if (req.user?.tipo !== "admin")
+    return res.status(403).json({ erro: "Só admin" });
   next();
 }
 
