@@ -5,7 +5,6 @@
     var links = document.querySelector(".nav-links");
     if (!btn || !links) return;
 
-    // Evita duplicação: marca o botão
     if (btn.dataset.menuReady === "1") return;
     btn.dataset.menuReady = "1";
 
@@ -17,6 +16,9 @@
 
     links.querySelectorAll("a").forEach(function (a) {
       a.addEventListener("click", function () {
+        // Não fecha em links externos nem no Portal do Estudante
+        if (a.hasAttribute("data-portal")) return;
+        if (a.target === "_blank") return;
         links.classList.remove("open");
       });
     });
