@@ -1,13 +1,20 @@
 {
   "version": 2,
-  "functions": {
-    "server/index.js": {
-      "runtime": "nodejs22.x",
-      "maxDuration": 60,
-      "includeFiles": "server/**"
+  "builds": [
+    {
+      "src": "server/index.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": "server/**"
+      }
+    },
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
     }
-  },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/server/index.js" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/server/index.js" },
+    { "src": "/(.*)", "dest": "/public/$1" }
   ]
 }
