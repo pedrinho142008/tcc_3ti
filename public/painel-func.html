@@ -3,98 +3,200 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel Funcionário — E.E.I.M</title>
+  <title>Portal do Aluno — E.E.I.M</title>
   <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/atividades.css" />
 </head>
-<body>
-  <div class="wrap">
-    <nav class="nav">
-      <a href="/painel-func.html" class="nav-brand">👤 <span class="badge">Funcionário</span></a>
-      <button class="menu-btn">☰</button>
-      <div class="nav-links">
-        <a href="/" target="_blank">Ver site</a>
-        <a href="#" id="btn-sair">Sair</a>
+<body class="admin-body">
+  <div class="admin-wrap">
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <div class="admin-brand-icon">A</div>
+        <div>
+          <div class="admin-brand-title">E.E.I.M</div>
+          <div class="admin-brand-sub">Portal do Aluno</div>
+        </div>
       </div>
-    </nav>
 
-    <div class="painel-head">
-      <div>
-        <h1>Olá, <span id="nome-user">—</span></h1>
-        <p>Registre a merenda do dia</p>
+      <nav class="admin-nav">
+        <button class="admin-nav-item active" data-aba="boletim">
+          <span class="admin-nav-icon">▤</span>
+          <span>Boletim</span>
+        </button>
+        <button class="admin-nav-item" data-aba="frequencia">
+          <span class="admin-nav-icon">◈</span>
+          <span>Frequência</span>
+        </button>
+        <button class="admin-nav-item" data-aba="atividades">
+          <span class="admin-nav-icon">▦</span>
+          <span>Atividades</span>
+        </button>
+      </nav>
+
+      <div class="admin-sidebar-footer">
+        <a href="/" class="admin-link-sec">Ver site</a>
+        <button id="btn-sair" class="admin-link-sec admin-link-danger">Sair</button>
       </div>
-    </div>
+    </aside>
 
-    <div class="card">
-      <h2>Cadastrar Merenda</h2>
-      <form id="f-merenda">
-        <label>Data<input type="date" id="data" required /></label>
-        <label>Período
-          <select id="periodo" required>
-            <option value="manha">Manhã</option>
-            <option value="almoco">Almoço</option>
-            <option value="tarde">Tarde</option>
-            <option value="noite">Noite</option>
-          </select>
-        </label>
-        <label>Descrição<textarea id="descricao" required placeholder="Ex: Arroz, feijão, frango e salada"></textarea></label>
-        <button type="submit">Salvar merenda</button>
-      </form>
-    </div>
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <h1 class="admin-title" id="titulo-aba">Boletim</h1>
+          <p class="admin-subtitle" id="sub-aba">Suas notas do ano letivo</p>
+        </div>
+        <div class="admin-user">
+          <div class="admin-user-avatar" id="user-avatar">A</div>
+          <div>
+            <div class="admin-user-name" id="user-nome">—</div>
+            <div class="admin-user-role" id="user-cargo">—</div>
+          </div>
+        </div>
+      </header>
 
-    <div class="card">
-      <h2>Merendas recentes</h2>
-      <div id="lista" class="grid-auto"></div>
-    </div>
+      <div id="conteudo-aluno"></div>
+      <div id="conteudo-atividades"></div>
+    </main>
   </div>
 
   <script type="module">
-    import { api, esc, fmtData, fmtCurta, mostrarLoading, esconderLoading, periodoNome } from "/assets/js/shared.js";
-    
+    import { api, esc, fmtData, mostrarLoading, esconderLoading, periodoNome } from "/assets/js/shared.js";
+    import { initAtividades } from "/assets/js/atividades-aluno.js";
 
-    let user;
-    try { user = await api("/api/users/me"); }
-    catch { window.location.href = "/login.html"; }
-    document.getElementById("nome-user").textContent = user.nome;
-    document.getElementById("data").value = new Date().toISOString().slice(0, 10);
+    // Dados do aluno (por enquanto fixos — depois virá do login)
+    const alunoAtual = {
+      nome: "PEDRO VICTOR SILVA DOS SANTOS",
+      matricula: "202430395866",
+      turma: "INFM3A",
+      serie: "3ª Série",
+      turno: "MATUTINO",
+    };
 
-    document.getElementById("btn-sair").addEventListener("click", async (e) => {
-      e.preventDefault();
-      await api("/api/users/logout", { method: "POST" });
+    document.getElementById("user-nome").textContent = alunoAtual.nome;
+    document.getElementById("user-cargo").textContent = alunoAtual.matricula;
+    document.getElementById("user-avatar").textContent = alunoAtual.nome.charAt(0);
+
+    document.getElementById("btn-sair").addEventListener("click", () => {
       window.location.href = "/";
     });
 
-    document.getElementById("f-merenda").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      mostrarLoading("Salvando...");
-      try {
-        await api("/api/meals", {
-          method: "POST",
-          body: JSON.stringify({
-            data: document.getElementById("data").value,
-            periodo: document.getElementById("periodo").value,
-            descricao: document.getElementById("descricao").value,
-          }),
-        });
-        document.getElementById("descricao").value = "";
-        await listar();
-      } catch (err) { alert("Erro: " + err.message); }
-      finally { esconderLoading(); }
+    const titulos = {
+      boletim: ["Boletim", "Suas notas do ano letivo"],
+      frequencia: ["Frequência", "Suas faltas e presenças"],
+      atividades: ["Atividades", "Envie e acompanhe suas entregas"],
+    };
+
+    document.querySelectorAll(".admin-nav-item").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".admin-nav-item").forEach((x) => x.classList.remove("active"));
+        btn.classList.add("active");
+        const aba = btn.dataset.aba;
+        document.getElementById("titulo-aba").textContent = titulos[aba][0];
+        document.getElementById("sub-aba").textContent = titulos[aba][1];
+        carregar(aba);
+      });
     });
 
-    async function listar() {
-      const lista = await api("/api/meals");
-      document.getElementById("lista").innerHTML = lista.length
-        ? lista.slice(0, 12).map(m => `
-            <div class="tile">
-              <div class="tile-date">${fmtCurta(m.data)}</div>
-              <span class="tile-tag">${periodoNome(m.periodo)}</span>
-              <div class="tile-text">${esc(m.descricao)}</div>
-            </div>`).join("")
-        : "<p>Nenhuma.</p>";
+    async function carregar(aba) {
+      const elBoletim = document.getElementById("conteudo-aluno");
+      const elAtividades = document.getElementById("conteudo-atividades");
+
+      elBoletim.classList.remove("hidden");
+      elAtividades.classList.add("hidden");
+
+      if (aba === "atividades") {
+        elBoletim.classList.add("hidden");
+        elAtividades.classList.remove("hidden");
+        await initAtividades(alunoAtual);
+        return;
+      }
+
+      mostrarLoading();
+      try {
+        if (aba === "boletim") elBoletim.innerHTML = await renderBoletim();
+        if (aba === "frequencia") elBoletim.innerHTML = renderFrequencia();
+      } catch (e) {
+        elBoletim.innerHTML = `<div class="admin-section"><p style="color:#c53030">Erro: ${esc(e.message)}</p></div>`;
+      } finally {
+        esconderLoading();
+      }
     }
 
-    listar();
+    async function renderBoletim() {
+      const boletim = await api("/api/notas?matricula=" + alunoAtual.matricula).catch(() => ({
+        disciplinas: [],
+        situacao: {},
+      }));
+
+      return `
+        <div class="admin-section">
+          <div class="admin-section-title">Notas por disciplina</div>
+          ${boletim.disciplinas?.length ? `
+            <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+              <thead style="background:#1e3c72;color:white">
+                <tr>
+                  <th style="padding:10px;text-align:left">Disciplina</th>
+                  <th style="padding:10px">Professor(a)</th>
+                  <th style="padding:10px">1º Bim</th>
+                  <th style="padding:10px">2º Bim</th>
+                  <th style="padding:10px">3º Bim</th>
+                  <th style="padding:10px">4º Bim</th>
+                  <th style="padding:10px">Faltas</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${boletim.disciplinas.map((d) => `
+                  <tr style="border-bottom:1px solid #e6e9ef">
+                    <td style="padding:10px">${esc(d.nome)}</td>
+                    <td style="padding:10px">${esc(d.professor || "—")}</td>
+                    <td style="padding:10px;text-align:center">${esc(d.bim1 || "—")}</td>
+                    <td style="padding:10px;text-align:center">${esc(d.bim2 || "—")}</td>
+                    <td style="padding:10px;text-align:center">${esc(d.bim3 || "—")}</td>
+                    <td style="padding:10px;text-align:center">${esc(d.bim4 || "—")}</td>
+                    <td style="padding:10px;text-align:center">${esc(d.faltas || "0")}</td>
+                  </tr>`).join("")}
+              </tbody>
+            </table>` : `
+            <div class="admin-empty">
+              <div class="admin-empty-icon">▤</div>
+              Carregando boletim... Se demorar, o sistema do SigEduc pode estar fora do ar.
+            </div>`}
+        </div>
+
+        <div class="admin-section">
+          <div class="admin-section-title">Resumo da série</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+            ${cardResumo(boletim.situacao?.status || "—", "Situação")}
+            ${cardResumo(boletim.situacao?.frequencia || "—", "Frequência")}
+            ${cardResumo(boletim.situacao?.faltas || "0", "Faltas")}
+            ${cardResumo(boletim.situacao?.aulasDadas || "0", "Aulas dadas")}
+          </div>
+        </div>
+      `;
+    }
+
+    function cardResumo(valor, label) {
+      return `
+        <div style="background:#f5f7fa;padding:18px;border-radius:12px;text-align:center">
+          <div style="font-size:1.4rem;font-weight:800;color:#1e3c72">${esc(valor)}</div>
+          <div style="font-size:0.7rem;color:#8895a7;text-transform:uppercase;margin-top:6px;letter-spacing:0.4px">${esc(label)}</div>
+        </div>`;
+    }
+
+    function renderFrequencia() {
+      return `
+        <div class="admin-section">
+          <div class="admin-section-title">Frequência</div>
+          <p style="color:#5a6472;font-size:0.9rem;line-height:1.6">
+            Os dados de frequência são calculados a partir do seu boletim no SigEduc.
+            Consulte a aba <strong>Boletim</strong> pra ver as faltas por disciplina.
+          </p>
+        </div>
+      `;
+    }
+
+    carregar("boletim");
   </script>
-  <script src="/assets/js/menu.js"></script>
 </body>
 </html>

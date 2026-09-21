@@ -14,13 +14,13 @@ import meals from "./routes/meals.js";
 import events from "./routes/events.js";
 import users from "./routes/users.js";
 import uploadRouter from "./routes/upload.js";
+import atividadesRouter from "./routes/atividades.js";
 
 dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-// Necessário por causa do proxy HTTPS da Vercel
 app.set("trust proxy", 1);
 
 app.use(express.json({ limit: "5mb" }));
@@ -53,6 +53,7 @@ app.use("/api/announcements", announcements);
 app.use("/api/meals", meals);
 app.use("/api/events", events);
 app.use("/api/users", users);
+app.use("/api/atividades", atividadesRouter);
 app.use("/api", uploadRouter);
 
 /* ---------- Config ---------- */
@@ -67,15 +68,12 @@ app.get("/api/config", (req, res) => {
   });
 });
 
-/* ---------- Healthcheck ---------- */
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, ts: Date.now() });
 });
 
-/* ---------- Static ---------- */
 app.use(express.static(path.join(__dirname, "..", "public")));
 
-/* ---------- Fallback ---------- */
 app.get("*", (req, res) => {
   if (req.path.startsWith("/api/")) {
     return res.status(404).json({ erro: "Rota não encontrada" });
@@ -83,7 +81,6 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "public", "index.html"));
 });
 
-/* ---------- Start ---------- */
 const PORT = process.env.PORT || 4000;
 
 if (process.env.VERCEL !== "1") {

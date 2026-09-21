@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal do Professor — E.E.I.M</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/atividades.css" />
+</head>
+<body class="admin-body">
+  <div class="admin-wrap">
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <div class="admin-brand-icon">P</div>
+        <div>
+          <div class="admin-brand-title">E.E.I.M</div>
+          <div class="admin-brand-sub">Portal do Professor</div>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <button class="admin-nav-item active" data-aba="agendar">
+          <span class="admin-nav-icon">◈</span>
+          <span>Agendar atividade</span>
+        </button>
+        <button class="admin-nav-item" data-aba="receber">
+          <span class="admin-nav-icon">▤</span>
+          <span>Receber atividades</span>
+        </button>
+      </nav>
+
+      <div class="admin-sidebar-footer">
+        <a href="/" class="admin-link-sec">Ver site</a>
+        <button id="btn-sair" class="admin-link-sec admin-link-danger">Sair</button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <h1 class="admin-title" id="titulo-aba">Agendar atividade</h1>
+          <p class="admin-subtitle" id="sub-aba">Crie uma atividade com prazo e anexo</p>
+        </div>
+        <div class="admin-user">
+          <div class="admin-user-avatar" id="user-avatar">P</div>
+          <div>
+            <div class="admin-user-name" id="user-nome">—</div>
+            <div class="admin-user-role" id="user-cargo">—</div>
+          </div>
+        </div>
+      </header>
+
+      <div id="conteudo-prof"></div>
+    </main>
+  </div>
+
+  <script type="module" src="/assets/js/painel-professor.js"></script>
+</body>
+</html>
