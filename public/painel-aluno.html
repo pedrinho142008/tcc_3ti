@@ -24,10 +24,6 @@
           <span class="admin-nav-icon">▤</span>
           <span>Boletim</span>
         </button>
-        <button class="admin-nav-item" data-aba="frequencia">
-          <span class="admin-nav-icon">◈</span>
-          <span>Frequência</span>
-        </button>
         <button class="admin-nav-item" data-aba="atividades">
           <span class="admin-nav-icon">▦</span>
           <span>Atividades</span>
@@ -65,25 +61,24 @@
     import { initAtividades } from "/assets/js/atividades-aluno.js";
 
     let alunoAtual = null;
+    let boletimCache = null;
 
     // Pega aluno do localStorage
     const alunoStr = localStorage.getItem("aluno");
-    if (!alunoStr) {
-      window.location.href = "/portal-aluno.html";
-    }
+    if (!alunoStr) window.location.href = "/portal-aluno.html";
 
     try {
       alunoAtual = JSON.parse(alunoStr);
+      boletimCache = alunoAtual.boletim || null;
     } catch {
       localStorage.removeItem("aluno");
       window.location.href = "/portal-aluno.html";
     }
 
-    // Confirma com o servidor
+    // Confirma sessão
     try {
       const me = await api("/api/aluno/me");
-      alunoAtual = me;
-      localStorage.setItem("aluno", JSON.stringify(me));
+      alunoAtual = { ...alunoAtual, ...me };
     } catch {
       localStorage.removeItem("aluno");
       window.location.href = "/portal-aluno.html";
@@ -102,7 +97,6 @@
 
     const titulos = {
       boletim: ["Boletim", "Suas notas do ano letivo"],
-      frequencia: ["Frequência", "Suas faltas e presenças"],
       atividades: ["Atividades", "Envie e acompanhe suas entregas"],
     };
 
@@ -133,44 +127,63 @@
         return;
       }
 
-      mostrarLoading();
+      mostrarLoading("Carregando boletim...");
       try {
-        if (aba === "boletim") elBoletim.innerHTML = await renderBoletim();
-        if (aba === "frequencia") elBoletim.innerHTML = renderFrequencia();
+        if (!boletimCache) {
+          boletimCache = await api("/api/aluno/boletim");
+        }
+        elBoletim.innerHTML = renderBoletim(boletimCache);
       } catch (e) {
-        elBoletim.innerHTML = `<div class="admin-section"><p style="color:#c53030">Erro: ${esc(e.message)}</p></div>`;
+        elBoletim.innerHTML = `
+          <div class="admin-section">
+            <p style="color:#c53030">Erro: ${esc(e.message)}</p>
+            <p style="color:#8895a7;font-size:0.85rem;margin-top:8px">
+              Sua sessão do SigEduc pode ter expirado. Faça logout e login novamente.
+            </p>
+          </div>`;
       } finally {
         esconderLoading();
       }
     }
 
-    async function renderBoletim() {
-      const boletim = await api("/api/notas?matricula=" + alunoAtual.matricula).catch(() => ({
-        disciplinas: [],
-        situacao: {},
-      }));
+    function renderBoletim(b) {
+      if (!b?.disciplinas?.length) {
+        return `
+          <div class="admin-section">
+            <div class="admin-empty">
+              <div class="admin-empty-icon">▤</div>
+              Nenhuma nota encontrada
+            </div>
+          </div>`;
+      }
 
+      const s = b.situacao || {};
       return `
         <div class="admin-section">
-          <div class="admin-section-title">Notas por disciplina</div>
-          ${boletim.disciplinas?.length ? `
-            <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+          <div class="admin-section-title">
+            Notas por disciplina — ${esc(b.aluno?.nome || alunoAtual.nome)}
+          </div>
+          <div style="font-size:0.85rem;color:#5a6472;margin-bottom:14px">
+            ${esc(b.turma?.turma || "")} • ${esc(b.turma?.serie || "")} • ${esc(b.turma?.turno || "")}
+          </div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;min-width:600px">
               <thead style="background:#1e3c72;color:white">
                 <tr>
                   <th style="padding:10px;text-align:left">Disciplina</th>
                   <th style="padding:10px">Professor(a)</th>
-                  <th style="padding:10px">1º Bim</th>
-                  <th style="padding:10px">2º Bim</th>
-                  <th style="padding:10px">3º Bim</th>
-                  <th style="padding:10px">4º Bim</th>
+                  <th style="padding:10px">1º</th>
+                  <th style="padding:10px">2º</th>
+                  <th style="padding:10px">3º</th>
+                  <th style="padding:10px">4º</th>
                   <th style="padding:10px">Faltas</th>
                 </tr>
               </thead>
               <tbody>
-                ${boletim.disciplinas.map((d) => `
+                ${b.disciplinas.map((d) => `
                   <tr style="border-bottom:1px solid #e6e9ef">
-                    <td style="padding:10px">${esc(d.nome)}</td>
-                    <td style="padding:10px">${esc(d.professor || "—")}</td>
+                    <td style="padding:10px;font-weight:600">${esc(d.nome)}</td>
+                    <td style="padding:10px;font-size:0.8rem">${esc(d.professor || "—")}</td>
                     <td style="padding:10px;text-align:center">${esc(d.bim1 || "—")}</td>
                     <td style="padding:10px;text-align:center">${esc(d.bim2 || "—")}</td>
                     <td style="padding:10px;text-align:center">${esc(d.bim3 || "—")}</td>
@@ -178,24 +191,28 @@
                     <td style="padding:10px;text-align:center">${esc(d.faltas || "0")}</td>
                   </tr>`).join("")}
               </tbody>
-            </table>` : `
-            <div class="admin-empty">
-              <div class="admin-empty-icon">▤</div>
-              Nenhuma nota encontrada. Verifique sua matrícula com a secretaria.
-            </div>`}
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-section">
+          <div class="admin-section-title">Resumo da série</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
+            ${cardResumo(s.status || "—", "Situação")}
+            ${cardResumo(s.frequencia || "—", "Frequência")}
+            ${cardResumo(s.faltas || "0", "Faltas")}
+            ${cardResumo(s.aulasDadas || "0", "Aulas dadas")}
+          </div>
         </div>
       `;
     }
 
-    function renderFrequencia() {
+    function cardResumo(valor, label) {
       return `
-        <div class="admin-section">
-          <div class="admin-section-title">Frequência</div>
-          <p style="color:#5a6472;font-size:0.9rem;line-height:1.6">
-            Consulte a aba <strong>Boletim</strong> pra ver as faltas por disciplina.
-          </p>
-        </div>
-      `;
+        <div style="background:#f5f7fa;padding:16px;border-radius:12px;text-align:center">
+          <div style="font-size:1.3rem;font-weight:800;color:#1e3c72">${esc(valor)}</div>
+          <div style="font-size:0.68rem;color:#8895a7;text-transform:uppercase;margin-top:6px">${esc(label)}</div>
+        </div>`;
     }
 
     carregar("boletim");

@@ -23,7 +23,7 @@
     <div class="card login-wrap">
       <div class="login-head">
         <h1>🎓 Portal do Estudante</h1>
-        <p>Acesse com sua matrícula e senha</p>
+        <p>Acesse com sua matrícula e senha do SigEduc</p>
       </div>
 
       <form id="form-aluno">
@@ -31,7 +31,7 @@
           <input type="text" id="matricula" required inputmode="numeric" placeholder="Ex: 202430395866" />
         </label>
         <label>Senha
-          <input type="password" id="senha" required placeholder="Sua senha" />
+          <input type="password" id="senha" required placeholder="Sua senha do SigEduc" />
         </label>
         <button type="submit" id="btn-entrar">Entrar</button>
         <p id="erro" class="erro-msg"></p>
@@ -53,7 +53,15 @@
       const matricula = document.getElementById("matricula").value.trim();
       const senha = document.getElementById("senha").value;
       const erro = document.getElementById("erro");
+      const btn = document.getElementById("btn-entrar");
+
       erro.textContent = "";
+      btn.disabled = true;
+      btn.textContent = "Entrando...";
+
+      // Mostra aviso de que pode demorar
+      erro.textContent = "⏳ Autenticando no SigEduc...";
+      erro.style.color = "#2a5298";
 
       try {
         const r = await fetch("/api/aluno/login", {
@@ -69,6 +77,9 @@
         window.location.href = "/painel-aluno.html";
       } catch (err) {
         erro.textContent = err.message;
+        erro.style.color = "#e53e3e";
+        btn.disabled = false;
+        btn.textContent = "Entrar";
       }
     });
   </script>
