@@ -16,6 +16,7 @@ app.use(cookieParser());
 console.log("📦 Carregando rotas...");
 
 const rotas = {};
+const errosCarregamento = {};
 
 async function carregar(nome, caminho) {
   try {
@@ -24,7 +25,9 @@ async function carregar(nome, caminho) {
     console.log(`  ✅ ${nome}`);
   } catch (e) {
     console.error(`  ❌ ${nome}: ${e.message}`);
+    console.error(`     Stack: ${e.stack?.slice(0, 500)}`);
     rotas[nome] = null;
+    errosCarregamento[nome] = e.message;
   }
 }
 
@@ -41,7 +44,13 @@ await carregar("cadastro", "./routes/cadastro.js");
 await carregar("verificarMatricula", "./routes/verificarMatricula.js");
 
 console.log("");
+console.log("📋 Rotas carregadas:");
+for (const [nome, mod] of Object.entries(rotas)) {
+  console.log(`   ${mod ? "✅" : "❌"} ${nome}`);
+}
+console.log("");
 
+/* ---------- Cache ---------- */
 const cache = new Map();
 const CACHE_TTL = 5000;
 
@@ -58,6 +67,7 @@ app.use("/api/", (req, res, next) => {
   next();
 });
 
+/* ---------- Monta rotas ---------- */
 if (rotas.posts) app.use("/api/posts", rotas.posts);
 if (rotas.announcements) app.use("/api/announcements", rotas.announcements);
 if (rotas.meals) app.use("/api/meals", rotas.meals);
@@ -70,6 +80,7 @@ if (rotas.cadastro) app.use("/api/cadastro", rotas.cadastro);
 if (rotas.verificarMatricula) app.use("/api/verificar-matricula", rotas.verificarMatricula);
 if (rotas.upload) app.use("/api", rotas.upload);
 
+/* ---------- Config ---------- */
 app.get("/api/config", (req, res) => {
   res.json({
     portalEstudante: "/portal-aluno.html",
@@ -81,14 +92,19 @@ app.get("/api/config", (req, res) => {
   });
 });
 
+/* ---------- Healthcheck com detalhes ---------- */
 app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
     ts: Date.now(),
     rotas: Object.fromEntries(Object.entries(rotas).map(([k, v]) => [k, !!v])),
+    erros: errosCarregamento,
+    node: process.version,
+    env: process.env.VERCEL === "1" ? "vercel" : "local",
   });
 });
 
+/* ---------- Static ---------- */
 app.use(express.static(path.join(__dirname, "..", "public")));
 
 app.get("*", (req, res) => {
