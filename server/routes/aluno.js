@@ -1,8 +1,9 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import { adminClient } from "../supabase.js";
-import { SigEducScraper } from "../scraper.js";
-import { parseBoletim, parseProfessores } from "../parser.js";
+import { SigEducClient } from "../scraper/client.js";
+import { parseBoletim } from "../scraper/boletim.js";
+import { parsePerfil, parseProfessores } from "../scraper/professores.js";
 
 const router = express.Router();
 const SECRET =
@@ -18,12 +19,11 @@ const COOKIE_OPTS = {
   path: "/",
 };
 
-// Cache de sessões do scraper (matrícula → scraper)
 const sessoes = new Map();
 const SESSAO_TTL = 15 * 60 * 1000;
 
 /* ============================================================
-   LOGIN — valida no SigEduc de verdade
+   LOGIN DO ALUNO
    ============================================================ */
 router.post("/login", async (req, res) => {
   const { matricula, senha } = req.body;
@@ -34,81 +34,95 @@ router.post("/login", async (req, res) => {
   console.log(`\n🎓 [ALUNO LOGIN] matrícula=${matricula}`);
 
   try {
-    const scraper = new SigEducScraper();
+    const c = new SigEducClient();
 
     console.log("   → autenticando no SigEduc...");
-    const ok = await scraper.login(matricula, senha);
+    const ok = await c.login(matricula, senha);
     if (!ok) {
-      console.log("   ✗ credenciais inválidas no SigEduc");
       return res.status(401).json({ erro: "Matrícula ou senha incorretos" });
     }
 
-    console.log("   → selecionando vínculo...");
-    await scraper.escolherVinculo(1);
+    console.log("   → escolhendo vínculo automaticamente...");
+    await c.escolherVinculoAutomatico();
 
     console.log("   → abrindo portal...");
-    const htmlPortal = await scraper.abrirPortal();
-    const professores = parseProfessores(htmlPortal);
+    const htmlPortal = await c.portal();
 
-    console.log("   → buscando boletim...");
-    const htmlBoletim = await scraper.buscarBoletim();
-    const boletim = parseBoletim(htmlBoletim);
-
-    // Mescla professores nas disciplinas
-    boletim.disciplinas = boletim.disciplinas.map((d) => {
-      const meta = professores[d.nome] || {};
-      return {
-        ...d,
-        professor: meta.professor || "—",
-        horario: meta.horario || "—",
-      };
-    });
-
-    // Nome do aluno (vem do boletim ou fallback)
-    const nomeAluno = boletim.aluno?.nome || `Aluno ${matricula}`;
-
-    // Salva/atualiza o aluno no Supabase
-    let { data: aluno } = await adminClient
-      .from("alunos")
-      .select("*")
-      .eq("matricula", matricula)
-      .single();
-
-    if (!aluno) {
-      const { data: novo } = await adminClient
-        .from("alunos")
-        .insert([{
-          matricula,
-          nome: nomeAluno,
-          turma: boletim.turma?.turma || null,
-          ativo: true,
-        }])
-        .select()
-        .single();
-      aluno = novo;
-    } else if (aluno.nome !== nomeAluno) {
-      await adminClient
-        .from("alunos")
-        .update({ nome: nomeAluno, turma: boletim.turma?.turma || null })
-        .eq("id", aluno.id);
-      aluno.nome = nomeAluno;
+    if (htmlPortal.length < 1000) {
+      console.warn("   ⚠ portal muito pequeno — sessão expirou");
+      return res.status(401).json({
+        erro: "Não foi possível abrir o portal. Verifique sua matrícula e senha.",
+      });
     }
 
-    // Cacheia o scraper e o boletim pra reusar sem nova requisição
+    const perfil = parsePerfil(htmlPortal);
+    const professores = parseProfessores(htmlPortal);
+    console.log(`   → portal: ${htmlPortal.length} bytes | ${Object.keys(professores).length} professores`);
+
+    console.log("   → buscando boletim...");
+    const htmlBoletim = await c.boletim();
+    const boletim = parseBoletim(htmlBoletim);
+    console.log(`   → boletim: ${htmlBoletim.length} bytes | ${boletim.disciplinas.length} disciplinas`);
+
+    // Mescla professores nas disciplinas
+    for (const d of boletim.disciplinas) {
+      const meta = professores[d.nome] || {};
+      d.professor = meta.professor || "—";
+      d.horario = meta.horario || "—";
+    }
+
+    const nomeAluno = perfil.nome || boletim.aluno?.nome || `Aluno ${matricula}`;
+    console.log(`   → nome: ${nomeAluno}`);
+
+    // Salva/atualiza no Supabase (não bloqueia se falhar)
+    let alunoId = null;
+    try {
+      const { data: existente } = await adminClient
+        .from("alunos")
+        .select("*")
+        .eq("matricula", matricula)
+        .maybeSingle();
+
+      if (existente) {
+        alunoId = existente.id;
+        if (existente.nome !== nomeAluno) {
+          await adminClient
+            .from("alunos")
+            .update({ nome: nomeAluno, turma: boletim.turma?.turma })
+            .eq("id", existente.id);
+        }
+      } else {
+        const { data: novo } = await adminClient
+          .from("alunos")
+          .insert([{
+            matricula,
+            nome: nomeAluno,
+            turma: boletim.turma?.turma || null,
+            ativo: true,
+          }])
+          .select()
+          .single();
+        alunoId = novo?.id || null;
+      }
+    } catch (e) {
+      console.warn("   ⚠ Supabase offline:", e.message);
+    }
+
+    // Guarda sessão em memória
     sessoes.set(matricula, {
-      scraper,
       boletim,
+      perfil,
       professores,
       criadoEm: Date.now(),
     });
     setTimeout(() => sessoes.delete(matricula), SESSAO_TTL);
 
-    // Gera token
+    // Gera token JWT
     const token = jwt.sign(
       {
-        id: aluno.id,
-        matricula: aluno.matricula,
-        nome: aluno.nome,
+        id: alunoId || matricula,
+        matricula,
+        nome: nomeAluno,
         tipo: "aluno",
       },
       SECRET,
@@ -117,26 +131,28 @@ router.post("/login", async (req, res) => {
 
     res.cookie("token_aluno", token, COOKIE_OPTS);
     res.json({
-      id: aluno.id,
-      matricula: aluno.matricula,
-      nome: aluno.nome,
-      turma: boletim.turma?.turma || aluno.turma || null,
+      id: alunoId || matricula,
+      matricula,
+      nome: nomeAluno,
+      turma: boletim.turma?.turma || null,
       tipo: "aluno",
-      boletim, // retorna já o boletim pronto
+      perfil,
+      boletim,
     });
 
     console.log("   ✓ login completo\n");
   } catch (e) {
     console.error("   ✗ erro:", e.message);
+    console.error(e.stack);
     res.status(500).json({
-      erro: "Falha ao conectar no SigEduc. Verifique sua conexão.",
+      erro: "Falha ao conectar no SigEduc. Tente novamente.",
       detalhe: e.message,
     });
   }
 });
 
 /* ============================================================
-   BOLETIM — usa cache ou re-busca
+   BOLETIM (cache em memória)
    ============================================================ */
 router.get("/boletim", (req, res) => {
   const token = req.cookies?.token_aluno;
@@ -150,14 +166,31 @@ router.get("/boletim", (req, res) => {
   }
 
   const sessao = sessoes.get(payload.matricula);
-  if (sessao && sessao.boletim) {
-    return res.json(sessao.boletim);
-  }
+  if (sessao?.boletim) return res.json(sessao.boletim);
 
-  // Sessão expirou — precisa logar de novo
   res.status(401).json({
     erro: "Sessão do SigEduc expirou. Faça login novamente.",
   });
+});
+
+/* ============================================================
+   PERFIL (cache em memória)
+   ============================================================ */
+router.get("/perfil", (req, res) => {
+  const token = req.cookies?.token_aluno;
+  if (!token) return res.status(401).json({ erro: "Não autenticado" });
+
+  let payload;
+  try {
+    payload = jwt.verify(token, SECRET);
+  } catch {
+    return res.status(401).json({ erro: "Sessão expirada" });
+  }
+
+  const sessao = sessoes.get(payload.matricula);
+  if (sessao?.perfil) return res.json(sessao.perfil);
+
+  res.status(404).json({ erro: "Perfil não encontrado" });
 });
 
 /* ============================================================
@@ -171,7 +204,7 @@ router.post("/logout", (req, res) => {
       sessoes.delete(payload.matricula);
     } catch {}
   }
-  res.clearCookie("token_aluno", COOKIE_OPTS);
+  res.clearCookie("token_aluno", { path: "/" });
   res.json({ ok: true });
 });
 

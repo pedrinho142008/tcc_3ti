@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadastro — E.E.I.M</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/cadastro.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="/" class="nav-brand">🏫 E.E.I.M <span class="badge">Ielmo Marinho</span></a>
+      <button class="menu-btn" type="button" aria-label="Menu">☰</button>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/eventos.html">Eventos</a>
+        <a href="/merenda.html">Merenda</a>
+        <a href="/contato.html">Contato</a>
+        <a href="/login.html">Login</a>
+      </div>
+    </nav>
+
+    <div class="card login-wrap">
+      <div class="login-head">
+        <h1>📝 Criar conta</h1>
+        <p>Escolha o tipo de acesso</p>
+      </div>
+
+      <form id="form-cadastro">
+        <label>Tipo de conta
+          <select id="tipo" required>
+            <option value="">Selecione</option>
+            <option value="professor">Professor(a)</option>
+            <option value="funcionario">Funcionário(a)</option>
+            <option value="aluno">Aluno(a)</option>
+          </select>
+        </label>
+
+        <!-- Bloco do aluno -->
+        <div id="bloco-aluno" style="display:none">
+          <label>Matrícula
+            <input type="text" id="matricula" placeholder="Ex: 202430395866" inputmode="numeric" />
+          </label>
+          <button type="button" id="btn-verificar-matricula" class="btn btn-sec" style="margin-bottom:14px">
+            🔍 Verificar matrícula no SigEduc
+          </button>
+          <p id="msg-matricula" class="erro-msg"></p>
+        </div>
+
+        <!-- Bloco comum (professor/funcionário) -->
+        <div id="bloco-comum" style="display:none">
+          <label>Foto de perfil (opcional)
+            <div class="foto-circle" id="ua-foto">
+              <div id="uc-foto">
+                <div class="foto-icon">+</div>
+                <div class="foto-text">Foto</div>
+              </div>
+            </div>
+            <input type="file" id="foto" accept="image/*" style="display:none" />
+          </label>
+
+          <label>Nome completo
+            <input type="text" id="nome" required placeholder="Seu nome" />
+          </label>
+
+          <label>Email
+            <input type="email" id="email" required placeholder="seu@email.com" />
+          </label>
+
+          <label>Senha
+            <input type="password" id="senha" required placeholder="••••••••" minlength="6" />
+          </label>
+
+          <button type="submit" class="btn" id="btn-enviar">Enviar pedido de cadastro</button>
+          <p id="msg-final" class="erro-msg"></p>
+        </div>
+      </form>
+
+      <p style="text-align:center;margin-top:22px;font-size:0.83rem;color:#8895a7">
+        Já tem conta? <a href="/login.html" style="color:#2a5298;font-weight:700">Faça login</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    document.querySelector(".menu-btn").addEventListener("click", () => {
+      document.querySelector(".nav-links").classList.toggle("open");
+    });
+
+    let fotoUrl = null;
+
+    document.getElementById("tipo").addEventListener("change", (e) => {
+      const tipo = e.target.value;
+      const blocoAluno = document.getElementById("bloco-aluno");
+      const blocoComum = document.getElementById("bloco-comum");
+
+      if (!tipo) {
+        blocoAluno.style.display = "none";
+        blocoComum.style.display = "none";
+        return;
+      }
+
+      if (tipo === "aluno") {
+        blocoAluno.style.display = "block";
+        blocoComum.style.display = "none";
+      } else {
+        blocoAluno.style.display = "none";
+        blocoComum.style.display = "block";
+      }
+    });
+
+    // Verificar matrícula do aluno
+    document.getElementById("btn-verificar-matricula").addEventListener("click", async () => {
+      const matricula = document.getElementById("matricula").value.trim();
+      const msg = document.getElementById("msg-matricula");
+      if (!matricula) {
+        msg.textContent = "Digite sua matrícula primeiro";
+        msg.style.color = "#e53e3e";
+        return;
+      }
+
+      msg.textContent = "🔍 Verificando...";
+      msg.style.color = "#2a5298";
+
+      try {
+        const r = await fetch("/api/verificar-matricula", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ matricula }),
+        });
+        const data = await r.json();
+
+        if (data.existe) {
+          msg.textContent = "✅ Matrícula encontrada! Você pode continuar.";
+          msg.style.color = "#38a169";
+        } else {
+          mostrarModalSigEduc(matricula);
+        }
+      } catch (err) {
+        msg.textContent = "Erro ao verificar: " + err.message;
+        msg.style.color = "#e53e3e";
+      }
+    });
+
+    // Modal de redirecionamento pro SigEduc
+    function mostrarModalSigEduc(matricula) {
+      const div = document.createElement("div");
+      div.className = "modal-overlay";
+      div.innerHTML = `
+        <div class="modal-box">
+          <div class="modal-icon">⚠️</div>
+          <h2>Matrícula não encontrada</h2>
+          <p>
+            Sua matrícula <strong>${matricula}</strong> não foi encontrada no SigEduc.
+            <br><br>
+            Você será redirecionado para o <strong>site do SigEduc</strong> para fazer sua matrícula.
+          </p>
+          <div class="modal-actions">
+            <button id="btn-voltar" class="btn btn-sec">← Voltar</button>
+            <a id="btn-ir" href="https://sigeduc.rn.gov.br/sigeduc/verTelaLogin.do" target="_blank" class="btn">Ir pro SigEduc →</a>
+          </div>
+        </div>`;
+      document.body.appendChild(div);
+      document.getElementById("btn-voltar").addEventListener("click", () => div.remove());
+    }
+
+    // Upload de foto (círculo)
+    const area = document.getElementById("ua-foto");
+    const file = document.getElementById("foto");
+    const content = document.getElementById("uc-foto");
+
+    area.addEventListener("click", () => file.click());
+    file.addEventListener("change", async () => {
+      const f = file.files[0];
+      if (!f) return;
+
+      // Preview local imediato
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        area.classList.add("com-foto");
+        content.innerHTML = `<img src="${e.target.result}" />`;
+      };
+      reader.readAsDataURL(f);
+
+      // Upload pro Supabase
+      try {
+        const fd = new FormData();
+        fd.append("arquivo", f);
+        const r = await fetch("/api/upload", { method: "POST", body: fd });
+        const data = await r.json();
+        if (data.url) fotoUrl = data.url;
+      } catch (e) {
+        console.error("Erro no upload:", e);
+      }
+    });
+
+    // Enviar cadastro
+    document.getElementById("form-cadastro").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("msg-final");
+
+      const tipo = document.getElementById("tipo").value;
+      if (!tipo) {
+        msg.textContent = "Escolha o tipo de conta";
+        msg.style.color = "#e53e3e";
+        return;
+      }
+
+      if (tipo === "aluno") {
+        msg.textContent = "Alunos devem usar o Portal do Estudante pra fazer login.";
+        msg.style.color = "#ed8936";
+        return;
+      }
+
+      const nome = document.getElementById("nome").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const senha = document.getElementById("senha").value;
+
+      msg.textContent = "Enviando pedido...";
+      msg.style.color = "#2a5298";
+
+      try {
+        const r = await fetch("/api/cadastro", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nome, email, senha, tipo, foto_url: fotoUrl }),
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.erro);
+
+        msg.textContent = "✅ " + data.mensagem;
+        msg.style.color = "#38a169";
+        document.getElementById("form-cadastro").reset();
+        content.innerHTML = `<div class="foto-icon">+</div><div class="foto-text">Foto</div>`;
+        area.classList.remove("com-foto");
+        fotoUrl = null;
+      } catch (err) {
+        msg.textContent = "❌ " + err.message;
+        msg.style.color = "#e53e3e";
+      }
+    });
+  </script>
+</body>
+</html>
