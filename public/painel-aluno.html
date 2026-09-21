@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel do Aluno — E.E.I.M</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/atividades.css" />
+</head>
+<body class="admin-body">
+  <div class="admin-wrap">
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <div class="admin-brand-icon">A</div>
+        <div>
+          <div class="admin-brand-title">E.E.I.M</div>
+          <div class="admin-brand-sub">Portal do Aluno</div>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <button class="admin-nav-item active" data-aba="boletim">
+          <span class="admin-nav-icon">▤</span>
+          <span>Boletim</span>
+        </button>
+        <button class="admin-nav-item" data-aba="frequencia">
+          <span class="admin-nav-icon">◈</span>
+          <span>Frequência</span>
+        </button>
+        <button class="admin-nav-item" data-aba="atividades">
+          <span class="admin-nav-icon">▦</span>
+          <span>Atividades</span>
+        </button>
+      </nav>
+
+      <div class="admin-sidebar-footer">
+        <a href="/" class="admin-link-sec">Ver site</a>
+        <button id="btn-sair" class="admin-link-sec admin-link-danger">Sair</button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <h1 class="admin-title" id="titulo-aba">Boletim</h1>
+          <p class="admin-subtitle" id="sub-aba">Suas notas do ano letivo</p>
+        </div>
+        <div class="admin-user">
+          <div class="admin-user-avatar" id="user-avatar">A</div>
+          <div>
+            <div class="admin-user-name" id="user-nome">—</div>
+            <div class="admin-user-role" id="user-cargo">—</div>
+          </div>
+        </div>
+      </header>
+
+      <div id="conteudo-aluno"></div>
+      <div id="conteudo-atividades" class="hidden"></div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { api, esc, mostrarLoading, esconderLoading } from "/assets/js/shared.js";
+    import { initAtividades } from "/assets/js/atividades-aluno.js";
+
+    let alunoAtual = null;
+
+    // Pega aluno do localStorage
+    const alunoStr = localStorage.getItem("aluno");
+    if (!alunoStr) {
+      window.location.href = "/portal-aluno.html";
+    }
+
+    try {
+      alunoAtual = JSON.parse(alunoStr);
+    } catch {
+      localStorage.removeItem("aluno");
+      window.location.href = "/portal-aluno.html";
+    }
+
+    // Confirma com o servidor
+    try {
+      const me = await api("/api/aluno/me");
+      alunoAtual = me;
+      localStorage.setItem("aluno", JSON.stringify(me));
+    } catch {
+      localStorage.removeItem("aluno");
+      window.location.href = "/portal-aluno.html";
+    }
+
+    document.getElementById("user-nome").textContent = alunoAtual.nome;
+    document.getElementById("user-cargo").textContent = alunoAtual.matricula;
+    document.getElementById("user-avatar").textContent =
+      (alunoAtual.nome || "A").charAt(0).toUpperCase();
+
+    document.getElementById("btn-sair").addEventListener("click", async () => {
+      await api("/api/aluno/logout", { method: "POST" }).catch(() => {});
+      localStorage.removeItem("aluno");
+      window.location.href = "/portal-aluno.html";
+    });
+
+    const titulos = {
+      boletim: ["Boletim", "Suas notas do ano letivo"],
+      frequencia: ["Frequência", "Suas faltas e presenças"],
+      atividades: ["Atividades", "Envie e acompanhe suas entregas"],
+    };
+
+    document.querySelectorAll(".admin-nav-item").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".admin-nav-item").forEach((x) =>
+          x.classList.remove("active")
+        );
+        btn.classList.add("active");
+        const aba = btn.dataset.aba;
+        document.getElementById("titulo-aba").textContent = titulos[aba][0];
+        document.getElementById("sub-aba").textContent = titulos[aba][1];
+        carregar(aba);
+      });
+    });
+
+    async function carregar(aba) {
+      const elBoletim = document.getElementById("conteudo-aluno");
+      const elAtividades = document.getElementById("conteudo-atividades");
+
+      elBoletim.classList.remove("hidden");
+      elAtividades.classList.add("hidden");
+
+      if (aba === "atividades") {
+        elBoletim.classList.add("hidden");
+        elAtividades.classList.remove("hidden");
+        await initAtividades(alunoAtual);
+        return;
+      }
+
+      mostrarLoading();
+      try {
+        if (aba === "boletim") elBoletim.innerHTML = await renderBoletim();
+        if (aba === "frequencia") elBoletim.innerHTML = renderFrequencia();
+      } catch (e) {
+        elBoletim.innerHTML = `<div class="admin-section"><p style="color:#c53030">Erro: ${esc(e.message)}</p></div>`;
+      } finally {
+        esconderLoading();
+      }
+    }
+
+    async function renderBoletim() {
+      const boletim = await api("/api/notas?matricula=" + alunoAtual.matricula).catch(() => ({
+        disciplinas: [],
+        situacao: {},
+      }));
+
+      return `
+        <div class="admin-section">
+          <div class="admin-section-title">Notas por disciplina</div>
+          ${boletim.disciplinas?.length ? `
+            <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+              <thead style="background:#1e3c72;color:white">
+                <tr>
+                  <th style="padding:10px;text-align:left">Disciplina</th>
+                  <th style="padding:10px">Professor(a)</th>
+                  <th style="padding:10px">1º Bim</th>
+                  <th style="padding:10px">2º Bim</th>
+                  <th style="padding:10px">3º Bim</th>
+                  <th style="padding:10px">4º Bim</th>
+                  <th style="padding:10px">Faltas</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${boletim.disciplinas.map((d) => `
+                  <tr style="border-bottom:1px solid #e6e9ef">
+                    <td style="padding:10px">${esc(d.nome)}</td>
+                    <td style="padding:10px">${esc(d.professor || "—")}</td>
+                    <td style="padding:10px;text-align:center">${esc(d.bim1 || "—")}</td>
+                    <td style="padding:10px;text-align:center">${esc(d.bim2 || "—")}</td>
+                    <td style="padding:10px;text-align:center">${esc(d.bim3 || "—")}</td>
+                    <td style="padding:10px;text-align:center">${esc(d.bim4 || "—")}</td>
+                    <td style="padding:10px;text-align:center">${esc(d.faltas || "0")}</td>
+                  </tr>`).join("")}
+              </tbody>
+            </table>` : `
+            <div class="admin-empty">
+              <div class="admin-empty-icon">▤</div>
+              Nenhuma nota encontrada. Verifique sua matrícula com a secretaria.
+            </div>`}
+        </div>
+      `;
+    }
+
+    function renderFrequencia() {
+      return `
+        <div class="admin-section">
+          <div class="admin-section-title">Frequência</div>
+          <p style="color:#5a6472;font-size:0.9rem;line-height:1.6">
+            Consulte a aba <strong>Boletim</strong> pra ver as faltas por disciplina.
+          </p>
+        </div>
+      `;
+    }
+
+    carregar("boletim");
+  </script>
+</body>
+</html>

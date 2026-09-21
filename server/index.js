@@ -15,6 +15,7 @@ import events from "./routes/events.js";
 import users from "./routes/users.js";
 import uploadRouter from "./routes/upload.js";
 import atividadesRouter from "./routes/atividades.js";
+import alunoRouter from "./routes/aluno.js";
 
 dotenv.config();
 
@@ -53,13 +54,14 @@ app.use("/api/announcements", announcements);
 app.use("/api/meals", meals);
 app.use("/api/events", events);
 app.use("/api/users", users);
+app.use("/api/aluno", alunoRouter);
 app.use("/api/atividades", atividadesRouter);
 app.use("/api", uploadRouter);
 
 /* ---------- Config ---------- */
 app.get("/api/config", (req, res) => {
   res.json({
-    portalEstudante: process.env.PORTAL_ESTUDANTE_URL || "http://localhost:3000",
+    portalEstudante: process.env.PORTAL_ESTUDANTE_URL || "/portal-aluno.html",
     escola: {
       nome: "E.E.I.M Escola Estadual Ielmo Marinho",
       endereco: "R. Jose Camilo Bezerra, 257-249, Ielmo Marinho - RN",
