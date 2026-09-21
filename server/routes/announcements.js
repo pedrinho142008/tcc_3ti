@@ -1,6 +1,6 @@
 import express from "express";
 import { publicClient, adminClient } from "../supabase.js";
-import { middlewareAdmin } from "../auth.js";
+import { middlewareAuth, middlewareAdmin } from "../auth.js";
 
 const router = express.Router();
 
@@ -13,7 +13,7 @@ router.get("/", async (req, res) => {
   res.json(data);
 });
 
-router.post("/", middlewareAdmin, async (req, res) => {
+router.post("/", middlewareAuth, middlewareAdmin, async (req, res) => {
   const { texto, urgente } = req.body;
   if (!texto) return res.status(400).json({ erro: "Texto obrigatório" });
   const { data, error } = await adminClient.from("announcements")
@@ -23,7 +23,7 @@ router.post("/", middlewareAdmin, async (req, res) => {
   res.json(data);
 });
 
-router.delete("/:id", middlewareAdmin, async (req, res) => {
+router.delete("/:id", middlewareAuth, middlewareAdmin, async (req, res) => {
   const { error } = await adminClient.from("announcements").delete().eq("id", req.params.id);
   if (error) return res.status(500).json({ erro: error.message });
   res.json({ ok: true });

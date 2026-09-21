@@ -1,6 +1,6 @@
 import express from "express";
 import { publicClient, adminClient } from "../supabase.js";
-import { middlewareFuncionario } from "../auth.js";
+import { middlewareAuth, middlewareFuncionario } from "../auth.js";
 
 const router = express.Router();
 
@@ -21,7 +21,7 @@ router.get("/hoje", async (req, res) => {
   res.json(data);
 });
 
-router.post("/", middlewareFuncionario, async (req, res) => {
+router.post("/", middlewareAuth, middlewareFuncionario, async (req, res) => {
   const { data, periodo, descricao } = req.body;
   if (!data || !periodo || !descricao) return res.status(400).json({ erro: "Campos obrigatórios" });
   const { data: r, error } = await adminClient.from("meals")
@@ -31,7 +31,7 @@ router.post("/", middlewareFuncionario, async (req, res) => {
   res.json(r);
 });
 
-router.delete("/:id", middlewareFuncionario, async (req, res) => {
+router.delete("/:id", middlewareAuth, middlewareFuncionario, async (req, res) => {
   const { error } = await adminClient.from("meals").delete().eq("id", req.params.id);
   if (error) return res.status(500).json({ erro: error.message });
   res.json({ ok: true });
