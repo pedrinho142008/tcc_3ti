@@ -1,5 +1,6 @@
 import { api, esc, fmtData, fmtCurta, mostrarLoading, esconderLoading, periodoNome } from "/assets/js/shared.js";
 
+/* ---------- USUÁRIO LOGADO ---------- */
 let user = null;
 try {
   user = await api("/api/users/me");
@@ -7,23 +8,22 @@ try {
   window.location.href = "/login.html";
 }
 
-// Preenche dados do usuário
-document.getElementById("user-nome").textContent = user.nome || "—";
-document.getElementById("user-cargo").textContent = user.cargo || user.tipo;
-document.getElementById("user-avatar").textContent = (user.nome || "A").charAt(0).toUpperCase();
+document.getElementById("user-nome").textContent = user?.nome || "—";
+document.getElementById("user-cargo").textContent = user?.cargo || user?.tipo || "—";
+document.getElementById("user-avatar").textContent = (user?.nome || "A").charAt(0).toUpperCase();
 
 document.getElementById("btn-sair").addEventListener("click", async () => {
-  await api("/api/users/logout", { method: "POST" });
+  await api("/api/users/logout", { method: "POST" }).catch(() => {});
   window.location.href = "/";
 });
 
-// Abas
+/* ---------- NAVEGAÇÃO ENTRE ABAS ---------- */
 const titulos = {
-  posts: ["Postagens", "Gerencie as publicações do site"],
-  avisos: ["Avisos", "Comunicados rápidos pra toda a comunidade"],
-  eventos: ["Eventos", "Agenda escolar"],
-  merenda: ["Merenda", "Cardápio diário"],
-  usuarios: ["Usuários", "Funcionários e administradores"],
+  posts:    ["Postagens",  "Gerencie as publicações do site"],
+  avisos:   ["Avisos",     "Comunicados rápidos pra toda a comunidade"],
+  eventos:  ["Eventos",    "Agenda escolar"],
+  merenda:  ["Merenda",    "Cardápio diário"],
+  usuarios: ["Usuários",   "Funcionários e administradores"],
 };
 
 document.querySelectorAll(".admin-nav-item").forEach((btn) => {
@@ -37,43 +37,47 @@ document.querySelectorAll(".admin-nav-item").forEach((btn) => {
   });
 });
 
-let abaAtual = "posts";
-
+/* ---------- CARREGADOR CENTRAL ---------- */
 async function carregar(aba) {
-  abaAtual = aba;
   const el = document.getElementById("admin-conteudo");
-  mostrarLoading();
+  mostrarLoading("Carregando...");
   try {
-    el.innerHTML = await render(aba);
+    let html = "";
+    if (aba === "posts")    html = await renderPosts();
+    if (aba === "avisos")   html = await renderAvisos();
+    if (aba === "eventos")  html = await renderEventos();
+    if (aba === "merenda")  html = await renderMerenda();
+    if (aba === "usuarios") html = await renderUsuarios();
+
+    el.innerHTML = html;
     bind(aba);
   } catch (e) {
+    console.error(e);
     el.innerHTML = `<div class="admin-section"><p style="color:#c53030">Erro: ${esc(e.message)}</p></div>`;
   } finally {
     esconderLoading();
   }
 }
 
-/* ---------- FORM DE IMAGEM (upload + URL) ---------- */
+/* ---------- FORM DE IMAGEM ---------- */
 function formImagem(idCampo) {
   return `
-    <div class="admin-form">
-      <label>Imagem
-        <div class="admin-upload-area" id="upload-area-${idCampo}">
-          <div id="upload-content-${idCampo}">
-            <div class="admin-upload-icon">▣</div>
-            <div class="admin-upload-text">Clique pra escolher uma foto do dispositivo</div>
-            <div class="admin-upload-hint">JPG, PNG ou WEBP — até 5 MB</div>
-          </div>
-          <input type="file" id="file-${idCampo}" accept="image/*" style="display:none" />
+    <label>Imagem
+      <div class="admin-upload-area" id="upload-area-${idCampo}">
+        <div id="upload-content-${idCampo}">
+          <div class="admin-upload-icon">▣</div>
+          <div class="admin-upload-text">Clique pra escolher uma foto do dispositivo</div>
+          <div class="admin-upload-hint">JPG, PNG ou WEBP — até 5 MB</div>
         </div>
-      </label>
+      </div>
+      <input type="file" id="file-${idCampo}" accept="image/*" style="display:none" />
+    </label>
 
-      <div class="admin-upload-or">ou</div>
+    <div class="admin-upload-or">ou</div>
 
-      <label>URL da imagem
-        <input type="text" id="url-${idCampo}" placeholder="https://exemplo.com/foto.jpg" />
-      </label>
-    </div>
+    <label>URL da imagem
+      <input type="text" id="url-${idCampo}" placeholder="https://exemplo.com/foto.jpg" />
+    </label>
   `;
 }
 
@@ -82,7 +86,6 @@ function bindImagem(idCampo) {
   const file = document.getElementById(`file-${idCampo}`);
   const url = document.getElementById(`url-${idCampo}`);
   const content = document.getElementById(`upload-content-${idCampo}`);
-
   if (!area) return;
 
   area.addEventListener("click", () => file.click());
@@ -91,7 +94,6 @@ function bindImagem(idCampo) {
     const f = file.files[0];
     if (!f) return;
 
-    // Preview local imediato
     const reader = new FileReader();
     reader.onload = (e) => {
       area.classList.add("has-image");
@@ -99,7 +101,6 @@ function bindImagem(idCampo) {
     };
     reader.readAsDataURL(f);
 
-    // Upload pro Supabase
     mostrarLoading("Enviando imagem...");
     try {
       const fd = new FormData();
@@ -137,7 +138,7 @@ function bindImagem(idCampo) {
 
 /* ---------- POSTS ---------- */
 async function renderPosts() {
-  const posts = await api("/api/posts");
+  const posts = await api("/api/posts").catch(() => []);
   return `
     <div class="admin-section">
       <div class="admin-section-title">Nova postagem</div>
@@ -148,9 +149,7 @@ async function renderPosts() {
         <label>Texto
           <textarea name="texto" required placeholder="Conteúdo da postagem..."></textarea>
         </label>
-
         ${formImagem("post")}
-
         <label>Categoria
           <select name="categoria">
             <option value="noticia">Notícia</option>
@@ -183,10 +182,7 @@ async function renderPosts() {
             <button class="admin-btn admin-btn-danger admin-btn-sm del-post" data-id="${p.id}">Excluir</button>
           </div>
         </div>`).join("")}</div>` : `
-        <div class="admin-empty">
-          <div class="admin-empty-icon">▤</div>
-          Nenhuma postagem ainda
-        </div>`}
+        <div class="admin-empty"><div class="admin-empty-icon">▤</div>Nenhuma postagem ainda</div>`}
     </div>
   `;
 }
@@ -228,7 +224,7 @@ function bindPosts() {
 
 /* ---------- AVISOS ---------- */
 async function renderAvisos() {
-  const avisos = await api("/api/announcements");
+  const avisos = await api("/api/announcements").catch(() => []);
   return `
     <div class="admin-section">
       <div class="admin-section-title">Novo aviso</div>
@@ -249,7 +245,7 @@ async function renderAvisos() {
       ${avisos.length ? `<div class="admin-list">${avisos.map((a) => `
         <div class="admin-item">
           <div class="admin-item-content">
-            <div class="admin-item-title">
+            <div class="admin-item-meta">
               <span class="admin-badge ${a.urgente ? "urgente" : ""}">${a.urgente ? "Urgente" : "Normal"}</span>
             </div>
             <div class="admin-item-text">${esc(a.texto)}</div>
@@ -258,10 +254,7 @@ async function renderAvisos() {
             <button class="admin-btn admin-btn-danger admin-btn-sm del-aviso" data-id="${a.id}">Excluir</button>
           </div>
         </div>`).join("")}</div>` : `
-        <div class="admin-empty">
-          <div class="admin-empty-icon">◈</div>
-          Nenhum aviso ativo
-        </div>`}
+        <div class="admin-empty"><div class="admin-empty-icon">◈</div>Nenhum aviso ativo</div>`}
     </div>
   `;
 }
@@ -298,7 +291,7 @@ function bindAvisos() {
 
 /* ---------- EVENTOS ---------- */
 async function renderEventos() {
-  const evs = await api("/api/events");
+  const evs = await api("/api/events").catch(() => []);
   return `
     <div class="admin-section">
       <div class="admin-section-title">Novo evento</div>
@@ -318,9 +311,7 @@ async function renderEventos() {
         <label>Fim
           <input type="datetime-local" name="data_fim" />
         </label>
-
         ${formImagem("evento")}
-
         <button type="submit" class="admin-btn">Criar evento</button>
       </form>
     </div>
@@ -338,10 +329,7 @@ async function renderEventos() {
             <button class="admin-btn admin-btn-danger admin-btn-sm del-evento" data-id="${e.id}">Excluir</button>
           </div>
         </div>`).join("")}</div>` : `
-        <div class="admin-empty">
-          <div class="admin-empty-icon">▦</div>
-          Nenhum evento cadastrado
-        </div>`}
+        <div class="admin-empty"><div class="admin-empty-icon">▦</div>Nenhum evento cadastrado</div>`}
     </div>
   `;
 }
@@ -384,7 +372,7 @@ function bindEventos() {
 
 /* ---------- MERENDA ---------- */
 async function renderMerenda() {
-  const ms = await api("/api/meals");
+  const ms = await api("/api/meals").catch(() => []);
   return `
     <div class="admin-section">
       <div class="admin-section-title">Cadastrar merenda</div>
@@ -419,10 +407,7 @@ async function renderMerenda() {
             <button class="admin-btn admin-btn-danger admin-btn-sm del-merenda" data-id="${m.id}">Excluir</button>
           </div>
         </div>`).join("")}</div>` : `
-        <div class="admin-empty">
-          <div class="admin-empty-icon">◐</div>
-          Nenhuma merenda cadastrada
-        </div>`}
+        <div class="admin-empty"><div class="admin-empty-icon">◐</div>Nenhuma merenda cadastrada</div>`}
     </div>
   `;
 }
@@ -460,7 +445,7 @@ function bindMerenda() {
 
 /* ---------- USUÁRIOS ---------- */
 async function renderUsuarios() {
-  const us = await api("/api/users");
+  const us = await api("/api/users").catch(() => []);
   return `
     <div class="admin-section">
       <div class="admin-section-title">Novo usuário</div>
@@ -499,10 +484,7 @@ async function renderUsuarios() {
             </div>
           </div>
         </div>`).join("")}</div>` : `
-        <div class="admin-empty">
-          <div class="admin-empty-icon">◇</div>
-          Nenhum usuário
-        </div>`}
+        <div class="admin-empty"><div class="admin-empty-icon">◇</div>Nenhum usuário</div>`}
     </div>
   `;
 }
@@ -531,13 +513,14 @@ function bindUsuarios() {
   });
 }
 
-/* ---------- ROUTER ---------- */
+/* ---------- BIND CENTRAL ---------- */
 function bind(aba) {
-  if (aba === "posts") bindPosts();
-  if (aba === "avisos") bindAvisos();
-  if (aba === "eventos") bindEventos();
-  if (aba === "merenda") bindMerenda();
+  if (aba === "posts")    bindPosts();
+  if (aba === "avisos")   bindAvisos();
+  if (aba === "eventos")  bindEventos();
+  if (aba === "merenda")  bindMerenda();
   if (aba === "usuarios") bindUsuarios();
 }
 
+/* ---------- INICIALIZA ---------- */
 carregar("posts");
