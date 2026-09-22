@@ -7,7 +7,7 @@ const router = express.Router();
 // Cookie cross-site (SameSite=None + Secure)
 const COOKIE_OPTS = {
   httpOnly: true,
-  sameSite: "none",
+  sameSite: "lax",
   secure: true,
   maxAge: 8 * 60 * 60 * 1000, // 8 horas
   path: "/",
