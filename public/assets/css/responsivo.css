@@ -1,1 +1,12 @@
 [... cole o conteúdo acima ...]
+
+/* Inputs tel/number no mobile */
+@media (max-width: 640px) {
+  input[type="tel"],
+  input[type="number"],
+  input[type="url"],
+  input[type="search"] {
+    padding: 13px 16px;
+    font-size: 16px; /* Evita zoom no iOS */
+  }
+}

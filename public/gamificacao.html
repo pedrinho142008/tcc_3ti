@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gamificação — E.E.I.M</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/gamificacao.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="/" class="nav-brand">🏫 E.E.I.M <span class="badge">Ielmo Marinho</span></a>
+      <button class="menu-btn" type="button" aria-label="Menu">☰</button>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/eventos.html">Eventos</a>
+        <a href="/merenda.html">Merenda</a>
+        <a href="/contato.html">Contato</a>
+        <a href="/gamificacao.html" class="active">🏆 Gamificação</a>
+        <a href="/pais-login.html">👨‍👩‍👧 Responsáveis</a>
+        <a href="/login.html">Login</a>
+      </div>
+    </nav>
+
+    <section class="hero-gamificacao">
+      <h1>🏆 <span>Gamificação</span></h1>
+      <p>Ranking de alunos e turmas • Conquistas • Níveis</p>
+    </section>
+
+    <div class="abas-gamificacao">
+      <button class="aba-gami ativa" data-aba="alunos">👨‍🎓 Alunos</button>
+      <button class="aba-gami" data-aba="turmas">🏫 Turmas</button>
+      <button class="aba-gami" data-aba="conquistas">🎖️ Conquistas</button>
+    </div>
+
+    <div id="conteudo-gami"></div>
+  </div>
+
+  <script type="module" src="/assets/js/gamificacao.js"></script>
+</body>
+</html>

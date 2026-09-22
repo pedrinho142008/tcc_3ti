@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel do Responsável — E.E.I.M</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/pais.css" />
+  <link rel="stylesheet" href="/assets/css/classroom.css" />
+  <link rel="stylesheet" href="/assets/css/responsivo.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="/pais-dashboard.html" class="nav-brand">👨‍👩‍👧 <span class="badge">Responsável</span></a>
+      <button class="menu-btn" type="button">☰</button>
+      <div class="nav-links">
+        <span id="nome-responsavel" style="padding:8px 14px;font-size:0.82rem;color:#5a6472"></span>
+        <a href="#" id="btn-sair">Sair</a>
+      </div>
+    </nav>
+
+    <div id="conteudo"></div>
+  </div>
+
+  <script type="module">
+    const API = "/api/pais";
+
+    const el = (id) => document.getElementById(id);
+    const esc = (s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const fmtData = (iso) => iso ? new Date(iso).toLocaleDateString("pt-BR") : "";
+
+    document.querySelector(".menu-btn").addEventListener("click", () => {
+      document.querySelector(".nav-links").classList.toggle("open");
+    });
+
+    // Confirma sessão
+    let responsavel = null;
+    try {
+      const r = await fetch(`${API}/me`, { credentials: "include" });
+      if (!r.ok) throw new Error();
+      responsavel = await r.json();
+    } catch {
+      window.location.href = "/pais-login.html";
+    }
+
+    el("nome-responsavel").textContent = responsavel.nome;
+
+    el("btn-sair").addEventListener("click", async (e) => {
+      e.preventDefault();
+      await fetch(`${API}/logout`, { method: "POST", credentials: "include" });
+      localStorage.removeItem("responsavel");
+      window.location.href = "/pais-login.html";
+    });
+
+    // Carrega alunos vinculados
+    const alunos = await fetch(`${API}/meus-alunos`, { credentials: "include" }).then((r) => r.json());
+
+    if (!alunos.length) {
+      el("conteudo").innerHTML = `
+        <div class="card">
+          <h2>Bem-vindo(a), ${esc(responsavel.nome)}!</h2>
+          <div class="admin-empty" style="text-align:center;padding:40px 20px">
+            <div style="font-size:3rem;opacity:0.4">👨‍👩‍👧</div>
+            <p style="margin:12px 0;font-weight:600">Nenhum aluno vinculado ainda</p>
+            <p style="font-size:0.85rem;color:#8895a7">
+              Peça ao diretor um <strong>código de vínculo</strong> para vincular seu filho.
+            </p>
+            <button class="btn" style="margin-top:20px" onclick="abrirVinculo()">Vincular aluno com código</button>
+          </div>
+        </div>
+      `;
+    } else {
+      const html = await Promise.all(alunos.map(renderAluno));
+      el("conteudo").innerHTML = html.join("");
+    }
+
+    async function renderAluno(v) {
+      const matricula = v.aluno_matricula;
+
+      const [boletim, certificados] = await Promise.all([
+        fetch(`/api/aluno/boletim?matricula=${matricula}`).then((r) => r.json()).catch(() => null),
+        fetch(`/api/premios/certificados/aluno/${matricula}`).then((r) => r.json()).catch(() => []),
+      ]);
+
+      const disciplinas = boletim?.disciplinas || [];
+      const situacao = boletim?.situacao || {};
+
+      return `
+        <div class="card aluno-resp-card">
+          <div class="aluno-resp-header">
+            <div class="aluno-resp-avatar">${esc((v.aluno_nome || "?").charAt(0).toUpperCase())}</div>
+            <div class="aluno-resp-info">
+              <h2>${esc(v.aluno_nome || "Aluno")}</h2>
+              <p>Matrícula: ${esc(matricula)}</p>
+            </div>
+          </div>
+
+          <div class="resumo" style="margin-bottom:20px">
+            ${cardResumo(situacao.status || "—", "Situação")}
+            ${cardResumo(situacao.frequencia || "—", "Frequência")}
+            ${cardResumo(situacao.faltas || "0", "Faltas")}
+            ${cardResumo(certificados.length || 0, "Certificados")}
+          </div>
+
+          ${disciplinas.length ? `
+            <div class="admin-section" style="padding:0;box-shadow:none;border:none;margin:0">
+              <h3 style="font-size:0.95rem;color:#1e3c72;margin-bottom:12px">📊 Notas por disciplina</h3>
+              <div class="tabela-wrapper">
+                <table class="nao-responsiva">
+                  <thead>
+                    <tr>
+                      <th>Disciplina</th>
+                      <th style="text-align:center">1º</th>
+                      <th style="text-align:center">2º</th>
+                      <th style="text-align:center">3º</th>
+                      <th style="text-align:center">4º</th>
+                      <th style="text-align:center">Faltas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${disciplinas.map((d) => `
+                      <tr>
+                        <td>${esc(d.nome)}</td>
+                        <td style="text-align:center">${esc(d.bim1 || "—")}</td>
+                        <td style="text-align:center">${esc(d.bim2 || "—")}</td>
+                        <td style="text-align:center">${esc(d.bim3 || "—")}</td>
+                        <td style="text-align:center">${esc(d.bim4 || "—")}</td>
+                        <td style="text-align:center">${esc(d.faltas || "0")}</td>
+                      </tr>`).join("")}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ` : `<p style="color:#8895a7;font-size:0.85rem;padding:12px 0">Notas ainda não disponíveis.</p>`}
+
+          ${certificados.length ? `
+            <div style="margin-top:20px">
+              <h3 style="font-size:0.95rem;color:#1e3c72;margin-bottom:12px">🎖️ Certificados</h3>
+              <div class="cert-lista">
+                ${certificados.map((c) => `
+                  <div class="cert-item">
+                    <div class="cert-icone">🏅</div>
+                    <div class="cert-info">
+                      <div class="cert-titulo">${esc(c.titulo)}</div>
+                      <div class="cert-data">${fmtData(c.emitido_em)}</div>
+                    </div>
+                    <button class="btn btn-sec" onclick="verCertificado('${esc(c.codigo_verificacao)}')">Ver</button>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }
+
+    function cardResumo(valor, label) {
+      return `
+        <div class="resumo-item">
+          <div class="valor">${esc(valor)}</div>
+          <div class="label">${esc(label)}</div>
+        </div>`;
+    }
+
+    window.abrirVinculo = () => {
+      const codigo = prompt("Digite o código de vínculo:");
+      if (!codigo) return;
+
+      fetch(`${API}/vincular`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo: codigo.toUpperCase().trim() }),
+      })
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.erro) alert("Erro: " + d.erro);
+          else { alert("✅ Aluno vinculado!"); location.reload(); }
+        })
+        .catch(() => alert("Erro ao vincular"));
+    };
+
+    window.verCertificado = (codigo) => {
+      window.open(`/certificado.html?codigo=${codigo}`, "_blank");
+    };
+  </script>
+</body>
+</html>

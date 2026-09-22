@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Análise Preditiva — Admin E.E.I.M</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/evasao.css" />
+</head>
+<body class="admin-body">
+  <div class="admin-wrap">
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <div class="admin-brand-icon">E</div>
+        <div>
+          <div class="admin-brand-title">E.E.I.M</div>
+          <div class="admin-brand-sub">Análise Preditiva</div>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <button class="admin-nav-item active" data-aba="dashboard">
+          <span class="admin-nav-icon">▤</span>
+          <span>Dashboard</span>
+        </button>
+        <button class="admin-nav-item" data-aba="lista">
+          <span class="admin-nav-icon">⚠️</span>
+          <span>Alunos em risco</span>
+        </button>
+      </nav>
+
+      <div class="admin-sidebar-footer">
+        <a href="/painel-admin.html" class="admin-link-sec">← Voltar ao painel</a>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <h1 class="admin-title" id="titulo-aba">Dashboard de Risco</h1>
+          <p class="admin-subtitle" id="sub-aba">Análise preditiva de evasão escolar</p>
+        </div>
+        <button class="admin-btn" id="btn-analisar">🔄 Re-analisar todos</button>
+      </header>
+
+      <div id="conteudo"></div>
+    </main>
+  </div>
+
+  <script type="module">
+    const API = "/api/evasao";
+    const el = (id) => document.getElementById(id);
+    const esc = (s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+    // Confirma login admin
+    try {
+      const r = await fetch("/api/users/me", { credentials: "include" });
+      if (!r.ok) throw new Error();
+      const u = await r.json();
+      if (u.tipo !== "admin") throw new Error();
+    } catch {
+      window.location.href = "/login.html";
+    }
+
+    document.querySelectorAll(".admin-nav-item").forEach((b) => {
+      b.addEventListener("click", () => {
+        document.querySelectorAll(".admin-nav-item").forEach((x) => x.classList.remove("active"));
+        b.classList.add("active");
+        carregar(b.dataset.aba);
+      });
+    });
+
+    el("btn-analisar").addEventListener("click", async () => {
+      if (!confirm("Analisar TODOS os alunos? Isso pode levar 1-2 minutos.")) return;
+      el("btn-analisar").textContent = "⏳ Analisando...";
+      el("btn-analisar").disabled = true;
+
+      try {
+        const r = await fetch(`${API}/analisar`, {
+          method: "POST",
+          credentials: "include",
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.erro);
+        alert(`✅ ${data.analisados} alunos analisados!`);
+        carregar("dashboard");
+      } catch (e) {
+        alert("Erro: " + e.message);
+      } finally {
+        el("btn-analisar").textContent = "🔄 Re-analisar todos";
+        el("btn-analisar").disabled = false;
+      }
+    });
+
+    async function carregar(aba) {
+      const c = el("conteudo");
+      c.innerHTML = `<div class="admin-section"><p>Carregando...</p></div>`;
+
+      try {
+        if (aba === "dashboard") c.innerHTML = await renderDashboard();
+        if (aba === "lista") c.innerHTML = await renderLista();
+        bind(aba);
+      } catch (e) {
+        c.innerHTML = `<div class="admin-section"><p style="color:#c53030">Erro: ${esc(e.message)}</p></div>`;
+      }
+    }
+
+    async function renderDashboard() {
+      const stats = await fetch(`${API}/estatisticas`, { credentials: "include" }).then((r) => r.json());
+
+      if (stats.total === 0) {
+        return `
+          <div class="admin-section">
+            <div class="admin-empty" style="text-align:center;padding:40px">
+              <div style="font-size:3rem;opacity:0.4">📊</div>
+              <p style="margin:12px 0;font-weight:600">Nenhuma análise ainda</p>
+              <p style="font-size:0.85rem;color:#8895a7">Clique em "Re-analisar todos" para começar</p>
+            </div>
+          </div>`;
+      }
+
+      const percent = (v) => stats.total > 0 ? Math.round((v / stats.total) * 100) : 0;
+
+      return `
+        <div class="admin-section">
+          <div class="admin-section-title">📊 Visão geral</div>
+          <div class="evasao-stats">
+            ${statCard(stats.total, "Total analisados", "#2a5298", "👥")}
+            ${statCard(stats.critico, `Crítico (${percent(stats.critico)}%)`, "#e53e3e", "🚨")}
+            ${statCard(stats.alto, `Alto (${percent(stats.alto)}%)`, "#ed8936", "⚠️")}
+            ${statCard(stats.medio, `Médio (${percent(stats.medio)}%)`, "#ecc94b", "⚡")}
+            ${statCard(stats.baixo, `Baixo (${percent(stats.baixo)}%)`, "#38a169", "✅")}
+          </div>
+        </div>
+
+        <div class="admin-section">
+          <div class="admin-section-title">🚨 Atenção urgente (crítico e alto)</div>
+          <div class="evasao-urgente">
+            ${await renderUrgentes()}
+          </div>
+        </div>
+      `;
+    }
+
+    function statCard(valor, label, cor, icone) {
+      return `
+        <div class="evasao-stat" style="border-left:4px solid ${cor}">
+          <div class="evasao-stat-ico">${icone}</div>
+          <div class="evasao-stat-valor">${valor}</div>
+          <div class="evasao-stat-label">${esc(label)}</div>
+        </div>`;
+    }
+
+    async function renderUrgentes() {
+      const alunos = await fetch(`${API}/lista`, { credentials: "include" }).then((r) => r.json());
+      const urgentes = alunos.filter((a) => a.nivel_risco === "critico" || a.nivel_risco === "alto");
+
+      if (!urgentes.length) {
+        return `<p style="color:#38a169;font-size:0.9rem">✅ Nenhum aluno em situação crítica no momento.</p>`;
+      }
+
+      return urgentes.map((a) => `
+        <div class="evasao-item ${a.nivel_risco}" data-matricula="${esc(a.aluno_matricula)}">
+          <div class="evasao-item-score">${a.score}</div>
+          <div class="evasao-item-info">
+            <div class="evasao-item-nome">${esc(a.aluno_nome)}</div>
+            <div class="evasao-item-turma">${esc(a.turma || "—")}</div>
+          </div>
+          <span class="evasao-badge ${a.nivel_risco}">${a.nivel_risco}</span>
+        </div>
+      `).join("");
+    }
+
+    async function renderLista() {
+      const alunos = await fetch(`${API}/lista`, { credentials: "include" }).then((r) => r.json());
+
+      if (!alunos.length) {
+        return `<div class="admin-section"><p>Nenhum dado. Clique em "Re-analisar todos".</p></div>`;
+      }
+
+      return `
+        <div class="admin-section">
+          <div class="admin-section-title">Alunos analisados (${alunos.length})</div>
+          <div class="evasao-lista">
+            ${alunos.map((a) => `
+              <div class="evasao-item ${a.nivel_risco}" data-matricula="${esc(a.aluno_matricula)}">
+                <div class="evasao-item-score">${a.score}</div>
+                <div class="evasao-item-info">
+                  <div class="evasao-item-nome">${esc(a.aluno_nome)}</div>
+                  <div class="evasao-item-turma">${esc(a.turma || "—")}</div>
+                </div>
+                <span class="evasao-badge ${a.nivel_risco}">${a.nivel_risco}</span>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    function bind(aba) {
+      document.querySelectorAll(".evasao-item").forEach((it) => {
+        it.addEventListener("click", () => abrirDetalhes(it.dataset.matricula));
+      });
+    }
+
+    async function abrirDetalhes(matricula) {
+      const dados = await fetch(`${API}/aluno/${matricula}`, { credentials: "include" }).then((r) => r.json());
+
+      const fatores = dados.fatores || {};
+      const sugestoes = dados.sugestoes || [];
+
+      const modal = document.createElement("div");
+      modal.className = "detalhes-aluno";
+      modal.innerHTML = `
+        <div class="detalhes-box">
+          <button class="fechar-modal">✕</button>
+          <div class="detalhes-nome">${esc(dados.aluno_nome)}</div>
+          <div class="detalhes-turma">${esc(dados.turma || "—")}</div>
+
+          <div class="detalhes-stats">
+            <div class="detalhes-stat">
+              <div class="v">${dados.score}</div>
+              <div class="l">Score</div>
+            </div>
+            <div class="detalhes-stat">
+              <div class="v" style="color:${dados.nivel_risco === 'critico' ? '#e53e3e' : dados.nivel_risco === 'alto' ? '#ed8936' : dados.nivel_risco === 'medio' ? '#ecc94b' : '#38a169'}">
+                ${dados.nivel_risco.toUpperCase()}
+              </div>
+              <div class="l">Nível</div>
+            </div>
+          </div>
+
+          <div class="detalhes-secao">
+            <h4>📋 Fatores identificados</h4>
+            ${Object.entries(fatores).map(([k, v]) => `
+              <div class="fator-item ${v.nivel}">
+                <strong>${k.charAt(0).toUpperCase() + k.slice(1)}</strong>
+                ${v.valor !== undefined ? `: ${v.valor}` : ""}
+                ${v.diff !== undefined ? ` (${v.diff > 0 ? "+" : ""}${v.diff})` : ""}
+                <span class="fator-nivel">${v.nivel}</span>
+              </div>
+            `).join("") || "<p style='font-size:0.85rem;color:#8895a7'>Nenhum fator crítico</p>"}
+          </div>
+
+          <div class="detalhes-secao">
+            <h4>💡 Sugestões de ação</h4>
+            ${sugestoes.length ? sugestoes.map((s) => `<div class="sugestao-item">${esc(s)}</div>`).join("") : "<p style='font-size:0.85rem;color:#8895a7'>Nenhuma sugestão</p>"}
+          </div>
+
+          <div class="detalhes-secao">
+            <h4>➕ Registrar ação tomada</h4>
+            <form id="form-acao" class="admin-form">
+              <label>Tipo de ação
+                <select name="tipo" required>
+                  <option value="contato_pais">📞 Contato com pais</option>
+                  <option value="reuniao">🤝 Reunião</option>
+                  <option value="encaminhamento">📋 Encaminhamento</option>
+                  <option value="tutoria">📚 Tutoria</option>
+                  <option value="outro">Outro</option>
+                </select>
+              </label>
+              <label>Descrição
+                <textarea name="descricao" placeholder="Detalhes da ação..."></textarea>
+              </label>
+              <button type="submit" class="admin-btn">Registrar ação</button>
+            </form>
+          </div>
+
+          ${dados.acoes?.length ? `
+            <div class="detalhes-secao">
+              <h4>📜 Histórico de ações</h4>
+              ${dados.acoes.map((a) => `
+                <div class="acao-item">
+                  <div class="acao-tipo">${esc(a.tipo)}</div>
+                  <div class="acao-desc">${esc(a.descricao || "")}</div>
+                  <div class="acao-meta">${esc(a.autor_nome || "")} • ${new Date(a.criado_em).toLocaleDateString("pt-BR")}</div>
+                </div>
+              `).join("")}
+            </div>
+          ` : ""}
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+      modal.querySelector(".fechar-modal").onclick = () => modal.remove();
+      modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
+
+      modal.querySelector("#form-acao").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        await fetch(`${API}/acoes`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            aluno_matricula: matricula,
+            tipo: fd.get("tipo"),
+            descricao: fd.get("descricao"),
+          }),
+        });
+        alert("✅ Ação registrada!");
+        modal.remove();
+      });
+    }
+
+    carregar("dashboard");
+  </script>
+</body>
+</html>

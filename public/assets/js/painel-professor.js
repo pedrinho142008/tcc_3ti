@@ -1,7 +1,6 @@
 import { api, esc, fmtData, mostrarLoading, esconderLoading } from "/assets/js/shared.js";
 
 const TURMAS = ["1º Ano T.I", "2º Ano T.I", "3º Ano T.I"];
-const TIPOS = "video/*,application/pdf,image/*,.doc,.docx,.ppt,.pptx";
 
 let user = null;
 try {
@@ -12,16 +11,19 @@ try {
 
 document.getElementById("user-nome").textContent = user.nome;
 document.getElementById("user-cargo").textContent = user.cargo || user.tipo;
-document.getElementById("user-avatar").textContent = (user.nome || "P").charAt(0);
+document.getElementById("user-avatar").textContent = (user.nome || "P").charAt(0).toUpperCase();
 
 document.getElementById("btn-sair").addEventListener("click", async () => {
-  await api("/api/users/logout", { method: "POST" });
+  await api("/api/users/logout", { method: "POST" }).catch(() => {});
   window.location.href = "/";
 });
 
+/* ============================================================
+   NAVEGAÇÃO
+   ============================================================ */
 const titulos = {
-  agendar: ["Agendar atividade", "Crie uma atividade com prazo e anexo"],
-  receber: ["Receber atividades", "Veja o que os alunos enviaram"],
+  atividades: ["Sala/Atividades", "Poste atividades pra sua turma"],
+  entregas: ["Entregas dos alunos", "Veja o que os alunos enviaram"],
 };
 
 document.querySelectorAll(".admin-nav-item").forEach((btn) => {
@@ -35,98 +37,137 @@ document.querySelectorAll(".admin-nav-item").forEach((btn) => {
   });
 });
 
+/* ============================================================
+   ROUTER
+   ============================================================ */
 async function carregar(aba) {
   const el = document.getElementById("conteudo-prof");
-  mostrarLoading();
+  mostrarLoading("Carregando...");
   try {
-    if (aba === "agendar") {
-      el.innerHTML = renderAgendar();
-      await bindAgendar();
+    if (aba === "atividades") {
+      el.innerHTML = await renderAtividades();
+      bindAtividades();
     }
-    if (aba === "receber") {
-      el.innerHTML = await renderReceber();
-      bindReceber();
+    if (aba === "entregas") {
+      el.innerHTML = await renderEntregas();
+      bindEntregas();
     }
   } catch (e) {
+    console.error(e);
     el.innerHTML = `<div class="admin-section"><p style="color:#c53030">Erro: ${esc(e.message)}</p></div>`;
   } finally {
     esconderLoading();
   }
 }
 
-function renderAgendar() {
+/* ============================================================
+   ABA: ATIVIDADES (postar)
+   ============================================================ */
+async function renderAtividades() {
+  const atividades = await api("/api/classroom/minhas-atividades").catch(() => []);
+
   return `
     <div class="admin-section">
-      <div class="admin-section-title">Nova atividade</div>
-      <form id="f-atv" class="admin-form">
+      <div class="admin-section-title">➕ Nova atividade</div>
+      <form id="f-atividade" class="admin-form">
         <label>Título
-          <input name="titulo" required placeholder="Ex: Apresentação sobre algoritmos" />
+          <input name="titulo" required placeholder="Ex: Lista de exercícios 3" />
         </label>
+
         <label>Turma
           <select name="turma" required>
-            <option value="">Selecione</option>
+            <option value="">Selecione a turma</option>
             ${TURMAS.map((t) => `<option value="${esc(t)}">${esc(t)}</option>`).join("")}
           </select>
         </label>
+
         <label>Descrição
-          <textarea name="descricao" placeholder="Detalhes da atividade..."></textarea>
+          <textarea name="descricao" placeholder="Detalhes da atividade, instruções, etc..."></textarea>
         </label>
-        <label>Prazo (data e hora)
-          <input type="datetime-local" name="prazo" required />
+
+        <label>Prazo (opcional)
+          <input type="datetime-local" name="prazo" />
         </label>
-        <label>Arquivo (vídeo, PDF, slides, imagem)
+
+        <label>Anexo (opcional)
           <div class="admin-upload-area" id="ua-atv">
             <div id="uc-atv">
               <div class="admin-upload-icon">▣</div>
-              <div class="admin-upload-text">Clique pra escolher um arquivo</div>
-              <div class="admin-upload-hint">Até 50 MB</div>
+              <div class="admin-upload-text">Clique pra anexar um arquivo</div>
+              <div class="admin-upload-hint">PDF, imagem, vídeo, doc... até 50 MB</div>
             </div>
           </div>
-          <input type="file" id="file-atv" accept="${TIPOS}" style="display:none" />
+          <input type="file" id="file-atv" accept="image/*,video/*,application/pdf,.doc,.docx,.ppt,.pptx" style="display:none" />
         </label>
-        <button type="submit" class="admin-btn">Agendar atividade</button>
+
+        <button type="submit" class="admin-btn">Postar atividade</button>
       </form>
     </div>
 
     <div class="admin-section">
-      <div class="admin-section-title">Atividades agendadas</div>
-      <div id="lista-atv" class="admin-list"></div>
+      <div class="admin-section-title">📋 Atividades postadas (${atividades.length})</div>
+      <div class="classroom-list">
+        ${atividades.length ? atividades.map(renderAtividadeCard).join("") : `
+          <div class="admin-empty">
+            <div class="admin-empty-icon">◈</div>
+            Nenhuma atividade postada ainda
+          </div>`}
+      </div>
     </div>
   `;
 }
 
-async function bindAgendar() {
+function renderAtividadeCard(a) {
+  const prazo = a.prazo ? new Date(a.prazo) : null;
+  const dias = prazo ? Math.ceil((prazo - new Date()) / 86400000) : null;
+
+  let cor = "#38a169";
+  if (dias !== null) {
+    if (dias < 0) cor = "#e53e3e";
+    else if (dias <= 2) cor = "#ed8936";
+  }
+
+  return `
+    <div class="classroom-item" data-id="${a.id}">
+      <div class="classroom-item-header">
+        <div>
+          <div class="classroom-item-title">${esc(a.titulo)}</div>
+          <div class="classroom-item-meta">
+            <span class="admin-badge">${esc(a.turma)}</span>
+            ${fmtData(a.criado_em)}
+          </div>
+        </div>
+        <button class="admin-btn admin-btn-danger admin-btn-sm del-atv" data-id="${a.id}">Excluir</button>
+      </div>
+
+      ${a.descricao ? `<div class="classroom-item-text">${esc(a.descricao)}</div>` : ""}
+
+      ${a.arquivo_url ? `
+        <a href="${esc(a.arquivo_url)}" target="_blank" class="classroom-anexo">
+          📎 ${esc(a.arquivo_nome || "Ver anexo")}
+        </a>` : ""}
+
+      ${prazo ? `
+        <div class="classroom-prazo" style="background:${cor}20;color:${cor}">
+          Prazo: ${prazo.toLocaleString("pt-BR")} ${dias >= 0 ? `(${dias} dias)` : "(expirado)"}
+        </div>` : ""}
+
+      <div class="classroom-comentarios-header">
+        💬 <strong>${a.total_comentarios || 0}</strong> comentário(s)
+        <button class="classroom-toggle-comentarios" data-id="${a.id}">Ver comentários ▼</button>
+      </div>
+
+      <div class="classroom-comentarios" id="comentarios-${a.id}" style="display:none"></div>
+    </div>
+  `;
+}
+
+function bindAtividades() {
+  // Upload
   const area = document.getElementById("ua-atv");
   const file = document.getElementById("file-atv");
   const content = document.getElementById("uc-atv");
-  let meta = null;
-
-  const atvs = await api("/api/atividades").catch(() => []);
-  document.getElementById("lista-atv").innerHTML = atvs.length
-    ? atvs.map((a) => `
-        <div class="admin-item">
-          <div class="admin-item-content">
-            <div class="admin-item-title">${esc(a.titulo)}</div>
-            <div class="admin-item-meta">
-              <span class="admin-badge">${esc(a.turma)}</span>
-              ${a.prazo ? "Prazo: " + fmtData(a.prazo) : ""}
-            </div>
-            ${a.descricao ? `<div class="admin-item-text">${esc(a.descricao)}</div>` : ""}
-          </div>
-          <div class="admin-item-actions">
-            <button class="admin-btn admin-btn-danger admin-btn-sm del-atv" data-id="${a.id}">Excluir</button>
-          </div>
-        </div>`).join("")
-    : `<div class="admin-empty"><div class="admin-empty-icon">◈</div>Nenhuma atividade agendada</div>`;
-
-  document.querySelectorAll(".del-atv").forEach((b) => {
-    b.addEventListener("click", async () => {
-      if (!confirm("Excluir?")) return;
-      mostrarLoading();
-      await api("/api/atividades/" + b.dataset.id, { method: "DELETE" });
-      carregar("agendar");
-    });
-  });
+  let arquivoMeta = null;
 
   area.addEventListener("click", () => file.click());
 
@@ -136,9 +177,9 @@ async function bindAgendar() {
 
     if (f.type.startsWith("image/")) {
       const reader = new FileReader();
-      reader.onload = (ev) => {
+      reader.onload = (e) => {
         area.classList.add("has-image");
-        content.innerHTML = `<img class="admin-upload-preview" src="${ev.target.result}" />`;
+        content.innerHTML = `<img class="admin-upload-preview" src="${e.target.result}" />`;
       };
       reader.readAsDataURL(f);
     } else {
@@ -148,149 +189,142 @@ async function bindAgendar() {
         <div class="admin-upload-hint">${(f.size / 1024 / 1024).toFixed(2)} MB</div>`;
     }
 
-    mostrarLoading("Enviando arquivo...");
+    mostrarLoading("Enviando anexo...");
     try {
       const fd = new FormData();
       fd.append("arquivo", f);
-      const r = await fetch("/api/atividades/upload", {
+      const r = await fetch("/api/classroom/upload", {
         method: "POST",
         credentials: "include",
         body: fd,
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.erro);
-      meta = data;
+      arquivoMeta = data;
     } catch (e) {
-      alert("Erro: " + e.message);
+      alert("Erro no upload: " + e.message);
     } finally {
       esconderLoading();
     }
   });
 
-  document.getElementById("f-atv")?.addEventListener("submit", async (e) => {
+  // Submit
+  document.getElementById("f-atividade")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    mostrarLoading("Agendando...");
+
+    mostrarLoading("Postando...");
     try {
-      await api("/api/atividades", {
+      await api("/api/classroom/atividades", {
         method: "POST",
         body: JSON.stringify({
           titulo: fd.get("titulo"),
           descricao: fd.get("descricao"),
           turma: fd.get("turma"),
-          prazo: new Date(fd.get("prazo")).toISOString(),
-          arquivo_url: meta?.url || null,
-          arquivo_tipo: meta?.tipo || null,
+          prazo: fd.get("prazo") ? new Date(fd.get("prazo")).toISOString() : null,
+          arquivo_url: arquivoMeta?.url || null,
+          arquivo_tipo: arquivoMeta?.tipo || null,
+          arquivo_nome: arquivoMeta?.nome || null,
         }),
       });
-      carregar("agendar");
+      alert("✅ Atividade postada!");
+      carregar("atividades");
     } catch (err) {
       alert("Erro: " + err.message);
       esconderLoading();
     }
   });
-}
 
-async function renderReceber() {
-  const envios = await api("/api/atividades/envios/listar").catch(() => []);
-  const turmas = [...new Set(envios.map((e) => e.turma))];
-
-  return `
-    <div class="admin-section">
-      <div class="admin-section-title">Filtrar por turma</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="admin-btn admin-btn-sec filtro-t" data-t="">Todas</button>
-        ${turmas.map((t) => `<button class="admin-btn admin-btn-sec filtro-t" data-t="${esc(t)}">${esc(t)}</button>`).join("")}
-      </div>
-    </div>
-
-    <div class="admin-section">
-      <div class="admin-section-title">Envios recebidos (${envios.length})</div>
-      <div id="lista-env" class="admin-list">
-        ${envios.length ? envios.map(renderEnvioProf).join("") : `
-          <div class="admin-empty"><div class="admin-empty-icon">▤</div>Nenhum envio recebido</div>`}
-      </div>
-    </div>
-  `;
-}
-
-function renderEnvioProf(e) {
-  return `
-    <div class="admin-item" data-turma="${esc(e.turma)}">
-      <div class="admin-item-content">
-        <div class="admin-item-title">${esc(e.titulo)}</div>
-        <div class="admin-item-meta">
-          <span class="admin-badge">${esc(e.turma)}</span>
-          ${esc(e.aluno_nome)} (${esc(e.aluno_matricula)}) — ${fmtData(e.criado_em)}
-        </div>
-        ${e.descricao ? `<div class="admin-item-text">${esc(e.descricao)}</div>` : ""}
-        ${e.arquivo_url ? `
-          <div style="margin-top:12px;padding:12px;background:#f5f7fa;border-radius:10px">
-            <div style="font-size:0.78rem;color:#5a6472;margin-bottom:6px">📎 ${esc(e.arquivo_nome || "arquivo")}</div>
-            ${previewArquivo(e.arquivo_url, e.arquivo_tipo)}
-          </div>` : ""}
-        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <input type="number" class="nota-input" data-id="${e.id}" placeholder="Nota" step="0.1" min="0" max="10"
-            value="${e.nota || ""}" style="width:90px;padding:8px;border-radius:8px;border:1px solid #e6e9ef" />
-          <input type="text" class="com-input" data-id="${e.id}" placeholder="Comentário"
-            value="${esc(e.comentario_professor || "")}" style="flex:1;min-width:150px;padding:8px;border-radius:8px;border:1px solid #e6e9ef" />
-          <button class="admin-btn admin-btn-sm salvar-correcao" data-id="${e.id}">Salvar</button>
-        </div>
-        ${e.status === "corrigido" ? `<div style="margin-top:8px"><span class="card-nota ${e.nota >= 7 ? "nota-boa" : e.nota >= 5 ? "nota-media" : "nota-ruim"}">Corrigido — nota ${e.nota}</span></div>` : ""}
-      </div>
-    </div>`;
-}
-
-function previewArquivo(url, tipo) {
-  if (!url) return "";
-  const t = (tipo || "").toLowerCase();
-
-  if (t.startsWith("image/")) {
-    return `<img class="preview-arquivo" src="${esc(url)}" loading="lazy" />`;
-  }
-  if (t.startsWith("video/")) {
-    return `<video class="preview-arquivo" controls src="${esc(url)}"></video>`;
-  }
-  if (t === "application/pdf") {
-    return `<iframe class="preview-arquivo embed" src="${esc(url)}"></iframe>`;
-  }
-  return `
-    <div style="padding:14px;background:white;border-radius:10px;text-align:center">
-      <div style="font-size:1.6rem">📄</div>
-      <a href="${esc(url)}" target="_blank" style="color:#2a5298;font-weight:600;font-size:0.85rem">Abrir arquivo</a>
-    </div>`;
-}
-
-function bindReceber() {
-  document.querySelectorAll(".filtro-t").forEach((b) => {
-    b.addEventListener("click", () => {
-      const t = b.dataset.t;
-      document.querySelectorAll(".admin-item").forEach((item) => {
-        item.style.display = (!t || item.dataset.turma === t) ? "flex" : "none";
-      });
+  // Excluir
+  document.querySelectorAll(".del-atv").forEach((b) => {
+    b.addEventListener("click", async () => {
+      if (!confirm("Excluir esta atividade?")) return;
+      mostrarLoading("Excluindo...");
+      await api("/api/classroom/atividades/" + b.dataset.id, { method: "DELETE" });
+      carregar("atividades");
     });
   });
 
-  document.querySelectorAll(".salvar-correcao").forEach((b) => {
+  // Ver comentários
+  document.querySelectorAll(".classroom-toggle-comentarios").forEach((b) => {
     b.addEventListener("click", async () => {
       const id = b.dataset.id;
-      const nota = document.querySelector(`.nota-input[data-id="${id}"]`).value;
-      const comentario = document.querySelector(`.com-input[data-id="${id}"]`).value;
+      const container = document.getElementById(`comentarios-${id}`);
+      const aberto = container.style.display !== "none";
 
-      mostrarLoading("Salvando correção...");
+      if (aberto) {
+        container.style.display = "none";
+        b.textContent = "Ver comentários ▼";
+        return;
+      }
+
+      container.style.display = "block";
+      b.textContent = "Ocultar comentários ▲";
+      container.innerHTML = `<div class="classroom-loading">Carregando...</div>`;
+
       try {
-        await api(`/api/atividades/envios/${id}/corrigir`, {
-          method: "PUT",
-          body: JSON.stringify({ nota: parseFloat(nota), comentario_professor: comentario }),
-        });
-        alert("✅ Correção salva!");
-        carregar("receber");
-      } catch (err) {
-        alert("Erro: " + err.message);
-        esconderLoading();
+        const comentarios = await api(`/api/classroom/atividades/${id}/comentarios`);
+        container.innerHTML = comentarios.length
+          ? comentarios.map(renderComentario).join("")
+          : `<div class="classroom-empty">Nenhum comentário ainda</div>`;
+      } catch (e) {
+        container.innerHTML = `<div class="classroom-empty">Erro: ${esc(e.message)}</div>`;
       }
     });
   });
 }
 
-carregar("agendar");
+function renderComentario(c) {
+  const isProfessor = c.autor_tipo === "professor" || c.autor_tipo === "admin";
+  const iniciais = (c.autor_nome || "?").charAt(0).toUpperCase();
+  const cor = isProfessor ? "#2a5298" : "#38a169";
+
+  return `
+    <div class="comentario ${isProfessor ? "comentario-prof" : ""}">
+      <div class="comentario-avatar" style="background:${cor}">${iniciais}</div>
+      <div class="comentario-body">
+        <div class="comentario-header">
+          <strong>${esc(c.autor_nome)}</strong>
+          ${isProfessor ? '<span class="comentario-tag">Professor(a)</span>' : ""}
+          <span class="comentario-hora">${fmtData(c.criado_em)}</span>
+        </div>
+        <div class="comentario-texto">${esc(c.texto)}</div>
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   ABA: ENTREGAS DOS ALUNOS
+   ============================================================ */
+async function renderEntregas() {
+  const envios = await api("/api/atividades/envios/listar").catch(() => []);
+
+  return `
+    <div class="admin-section">
+      <div class="admin-section-title">📥 Entregas recebidas (${envios.length})</div>
+      ${envios.length ? `<div class="admin-list">${envios.map((e) => `
+        <div class="admin-item">
+          <div class="admin-item-content">
+            <div class="admin-item-title">${esc(e.titulo)}</div>
+            <div class="admin-item-meta">
+              <span class="admin-badge">${esc(e.turma)}</span>
+              ${esc(e.aluno_nome)} — ${fmtData(e.criado_em)}
+            </div>
+            ${e.descricao ? `<div class="admin-item-text">${esc(e.descricao)}</div>` : ""}
+            ${e.arquivo_url ? `<a href="${esc(e.arquivo_url)}" target="_blank" class="classroom-anexo">📎 ${esc(e.arquivo_nome || "Ver arquivo")}</a>` : ""}
+          </div>
+        </div>`).join("")}</div>` : `
+        <div class="admin-empty"><div class="admin-empty-icon">▤</div>Nenhuma entrega recebida</div>`}
+    </div>
+  `;
+}
+
+function bindEntregas() {
+  // Sem ações especiais
+}
+
+/* ============================================================
+   INICIALIZA
+   ============================================================ */
+carregar("atividades");

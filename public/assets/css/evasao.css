@@ -1,0 +1,174 @@
+/* Análise de Evasão */
+.evasao-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+.evasao-stat {
+  background: white;
+  border-radius: 14px;
+  padding: 18px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.evasao-stat-ico {
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+}
+
+.evasao-stat-valor {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #1e3c72;
+  line-height: 1;
+}
+
+.evasao-stat-label {
+  font-size: 0.72rem;
+  color: #8895a7;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+.evasao-lista,
+.evasao-urgente {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.evasao-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fafbfc;
+  border: 1px solid #e6e9ef;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.evasao-item:hover {
+  background: #f5f7fa;
+  transform: translateX(4px);
+}
+
+.evasao-item.critico { border-left: 4px solid #e53e3e; }
+.evasao-item.alto { border-left: 4px solid #ed8936; }
+.evasao-item.medio { border-left: 4px solid #ecc94b; }
+.evasao-item.baixo { border-left: 4px solid #38a169; }
+
+.evasao-item-score {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.05rem;
+  color: white;
+  flex-shrink: 0;
+}
+
+.evasao-item.critico .evasao-item-score { background: #e53e3e; }
+.evasao-item.alto .evasao-item-score { background: #ed8936; }
+.evasao-item.medio .evasao-item-score { background: #ecc94b; color: #5a4a00; }
+.evasao-item.baixo .evasao-item-score { background: #38a169; }
+
+.evasao-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.evasao-item-nome {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #1e3c72;
+}
+
+.evasao-item-turma {
+  font-size: 0.72rem;
+  color: #8895a7;
+  text-transform: uppercase;
+}
+
+.evasao-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  flex-shrink: 0;
+}
+
+.evasao-badge.critico { background: #fee2e2; color: #991b1b; }
+.evasao-badge.alto { background: #ffedd5; color: #9a3412; }
+.evasao-badge.medio { background: #fef3c7; color: #92400e; }
+.evasao-badge.baixo { background: #d1fae5; color: #065f46; }
+
+.fator-item {
+  padding: 10px 14px;
+  background: #f5f7fa;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fator-item.critico { background: #fee2e2; }
+.fator-item.alto { background: #ffedd5; }
+.fator-item.medio { background: #fef3c7; }
+.fator-item.baixo { background: #d1fae5; }
+
+.fator-nivel {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  opacity: 0.7;
+}
+
+.sugestao-item {
+  padding: 10px 14px;
+  background: #eef3fb;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  color: #2a5298;
+  border-left: 3px solid #2a5298;
+}
+
+.acao-item {
+  padding: 12px 14px;
+  background: #f5f7fa;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+.acao-tipo {
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: #1e3c72;
+  text-transform: capitalize;
+  margin-bottom: 4px;
+}
+
+.acao-desc {
+  font-size: 0.82rem;
+  color: #4a5568;
+  margin-bottom: 4px;
+}
+
+.acao-meta {
+  font-size: 0.68rem;
+  color: #8895a7;
+}

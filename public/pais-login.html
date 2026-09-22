@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal do Responsável — E.E.I.M</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/responsivo.css" />
+  <link rel="stylesheet" href="/assets/css/pais.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="/" class="nav-brand">🏫 E.E.I.M <span class="badge">Ielmo Marinho</span></a>
+      <button class="menu-btn" type="button" aria-label="Menu">☰</button>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/eventos.html">Eventos</a>
+        <a href="/merenda.html">Merenda</a>
+        <a href="/contato.html">Contato</a>
+        <a href="/gamificacao.html">🏆 Gamificação</a>
+        <a href="/mural.html">🏛️ Mural de Honra</a>
+      </div>
+    </nav>
+
+    <div class="card login-wrap">
+      <div class="pais-header">
+        <div class="pais-icone">👨‍👩‍👧</div>
+        <h1>Portal do Responsável</h1>
+        <p>Acompanhe o boletim do seu filho</p>
+      </div>
+
+      <form id="form-login">
+        <label>Email
+          <input type="email" id="email" required placeholder="seu@email.com" autocomplete="email" inputmode="email" />
+        </label>
+
+        <label>Senha
+          <input type="password" id="senha" required placeholder="••••••••" autocomplete="current-password" />
+        </label>
+
+        <button type="submit" class="btn-pais" id="btn-entrar">
+          <span id="btn-texto">Entrar</span>
+        </button>
+
+        <p id="erro" class="msg-status"></p>
+      </form>
+
+      <div class="pais-rodape">
+        Não tem conta? <a href="/pais-cadastro.html">Criar cadastro</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelector(".menu-btn")?.addEventListener("click", () => {
+      document.querySelector(".nav-links")?.classList.toggle("open");
+    });
+
+    document.getElementById("form-login").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const senha = document.getElementById("senha").value;
+      const erro = document.getElementById("erro");
+      const btn = document.getElementById("btn-entrar");
+      const btnTexto = document.getElementById("btn-texto");
+
+      erro.textContent = "";
+      erro.className = "msg-status";
+      btn.disabled = true;
+      btnTexto.textContent = "Entrando...";
+
+      try {
+        const r = await fetch("/api/pais/login", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, senha }),
+        });
+        const data = await r.json();
+
+        if (!r.ok) {
+          if (data.pendente) {
+            erro.className = "msg-status aviso";
+            erro.innerHTML = `
+              ⏳ <strong>Conta aguardando aprovação</strong><br>
+              <span style="font-size:0.85rem">
+                O administrador da escola precisa aprovar seu cadastro.
+              </span>
+            `;
+          } else {
+            throw new Error(data.erro || "Erro ao entrar");
+          }
+          btn.disabled = false;
+          btnTexto.textContent = "Entrar";
+          return;
+        }
+
+        localStorage.setItem("responsavel", JSON.stringify(data));
+        window.location.href = "/pais-dashboard.html";
+      } catch (err) {
+        erro.className = "msg-status erro";
+        erro.textContent = "❌ " + err.message;
+        btn.disabled = false;
+        btnTexto.textContent = "Entrar";
+      }
+    });
+  </script>
+</body>
+</html>

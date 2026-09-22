@@ -6,12 +6,11 @@
   <title>Painel Administrativo — E.E.I.M</title>
   <link rel="stylesheet" href="/assets/css/style.css" />
   <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/classroom.css" />
   <link rel="stylesheet" href="/assets/css/responsivo.css" />
 </head>
 <body class="admin-body">
   <div class="admin-wrap">
-
-    <!-- SIDEBAR -->
     <aside class="admin-sidebar">
       <div class="admin-brand">
         <div class="admin-brand-icon">E</div>
@@ -46,6 +45,22 @@
           <span class="admin-nav-icon">◉</span>
           <span>Pedidos de cadastro</span>
         </button>
+        <button class="admin-nav-item" data-aba="evasao">
+          <span class="admin-nav-icon">⚠️</span>
+          <span>Análise preditiva</span>
+        </button>
+        <button class="admin-nav-item" data-aba="codigos">
+          <span class="admin-nav-icon">🔑</span>
+          <span>Códigos de vínculo</span>
+        </button>
+        <button class="admin-nav-item" data-aba="mural">
+          <span class="admin-nav-icon">🏛️</span>
+          <span>Mural de Honra</span>
+        </button>
+        <button class="admin-nav-item" data-aba="certificados">
+          <span class="admin-nav-icon">🎖️</span>
+          <span>Certificados</span>
+        </button>
       </nav>
 
       <div class="admin-sidebar-footer">
@@ -54,7 +69,6 @@
       </div>
     </aside>
 
-    <!-- CONTEÚDO -->
     <main class="admin-main">
       <header class="admin-header">
         <div>
@@ -72,7 +86,6 @@
 
       <div id="admin-conteudo"></div>
     </main>
-
   </div>
 
   <script type="module">
@@ -98,15 +111,19 @@
     });
 
     /* ============================================================
-       NAVEGAÇÃO ENTRE ABAS
+       TÍTULOS DAS ABAS
        ============================================================ */
     const titulos = {
-      posts:    ["Postagens",             "Gerencie as publicações do site"],
-      avisos:   ["Avisos",                "Comunicados rápidos pra toda a comunidade"],
-      eventos:  ["Eventos",               "Agenda escolar"],
-      merenda:  ["Merenda",               "Cardápio diário"],
-      usuarios: ["Usuários",              "Funcionários e administradores"],
-      pedidos:  ["Pedidos de cadastro",   "Aprove ou rejeite novos cadastros"],
+      posts:        ["Postagens",             "Gerencie as publicações do site"],
+      avisos:       ["Avisos",                "Comunicados rápidos pra toda a comunidade"],
+      eventos:      ["Eventos",               "Agenda escolar"],
+      merenda:      ["Merenda",               "Cardápio diário"],
+      usuarios:     ["Usuários",              "Funcionários e administradores"],
+      pedidos:      ["Pedidos de cadastro",   "Aprove ou rejeite novos cadastros"],
+      evasao:       ["Análise preditiva",     "Identifique alunos em risco de evasão"],
+      codigos:      ["Códigos de vínculo",    "Gere códigos para pais vincularem filhos"],
+      mural:        ["Mural de Honra",        "Destaques do mês"],
+      certificados: ["Certificados",          "Emita certificados para alunos"],
     };
 
     document.querySelectorAll(".admin-nav-item").forEach((btn) => {
@@ -121,19 +138,23 @@
     });
 
     /* ============================================================
-       CARREGADOR CENTRAL
+       ROUTER
        ============================================================ */
     async function carregar(aba) {
       const el = document.getElementById("admin-conteudo");
       mostrarLoading("Carregando...");
       try {
         let html = "";
-        if (aba === "posts")    html = await renderPosts();
-        if (aba === "avisos")   html = await renderAvisos();
-        if (aba === "eventos")  html = await renderEventos();
-        if (aba === "merenda")  html = await renderMerenda();
-        if (aba === "usuarios") html = await renderUsuarios();
-        if (aba === "pedidos")  html = await renderPedidos();
+        if (aba === "posts")        html = await renderPosts();
+        if (aba === "avisos")       html = await renderAvisos();
+        if (aba === "eventos")      html = await renderEventos();
+        if (aba === "merenda")      html = await renderMerenda();
+        if (aba === "usuarios")     html = await renderUsuarios();
+        if (aba === "pedidos")      html = await renderPedidos();
+        if (aba === "evasao")       html = await renderEvasaoAdmin();
+        if (aba === "codigos")      html = await renderCodigos();
+        if (aba === "mural")        html = await renderMuralAdmin();
+        if (aba === "certificados") html = await renderCertificados();
 
         el.innerHTML = html;
         bind(aba);
@@ -146,7 +167,7 @@
     }
 
     /* ============================================================
-       FORM DE IMAGEM (upload + URL)
+       POSTS
        ============================================================ */
     function formImagem(idCampo) {
       return `
@@ -154,7 +175,7 @@
           <div class="admin-upload-area" id="upload-area-${idCampo}">
             <div id="upload-content-${idCampo}">
               <div class="admin-upload-icon">▣</div>
-              <div class="admin-upload-text">Clique pra escolher uma foto do dispositivo</div>
+              <div class="admin-upload-text">Clique pra escolher uma foto</div>
               <div class="admin-upload-hint">JPG, PNG ou WEBP — até 5 MB</div>
             </div>
           </div>
@@ -175,11 +196,9 @@
       if (!area) return;
 
       area.addEventListener("click", () => file.click());
-
       file.addEventListener("change", async () => {
         const f = file.files[0];
         if (!f) return;
-
         const reader = new FileReader();
         reader.onload = (e) => {
           area.classList.add("has-image");
@@ -191,18 +210,12 @@
         try {
           const fd = new FormData();
           fd.append("arquivo", f);
-          const r = await fetch("/api/upload", {
-            method: "POST",
-            credentials: "include",
-            body: fd,
-          });
+          const r = await fetch("/api/upload", { method: "POST", credentials: "include", body: fd });
           const data = await r.json();
-          if (!r.ok) throw new Error(data.erro || "Falha no upload");
+          if (!r.ok) throw new Error(data.erro);
           url.value = data.url;
         } catch (err) {
-          alert("Erro ao subir imagem: " + err.message);
-          area.classList.remove("has-image");
-          content.innerHTML = `<div class="admin-upload-icon">▣</div><div class="admin-upload-text">Clique pra escolher uma foto</div>`;
+          alert("Erro: " + err.message);
         } finally {
           esconderLoading();
         }
@@ -213,28 +226,18 @@
         if (v && /^https?:\/\//.test(v)) {
           area.classList.add("has-image");
           content.innerHTML = `<img class="admin-upload-preview" src="${esc(v)}" onerror="this.style.display='none'" />`;
-        } else {
-          area.classList.remove("has-image");
-          content.innerHTML = `<div class="admin-upload-icon">▣</div><div class="admin-upload-text">Clique pra escolher uma foto</div>`;
         }
       });
     }
 
-    /* ============================================================
-       POSTS
-       ============================================================ */
     async function renderPosts() {
       const posts = await api("/api/posts").catch(() => []);
       return `
         <div class="admin-section">
-          <div class="admin-section-title">Nova postagem</div>
+          <div class="admin-section-title">➕ Nova postagem</div>
           <form id="f-post" class="admin-form">
-            <label>Título
-              <input name="titulo" required placeholder="Ex: Semana da leitura" />
-            </label>
-            <label>Texto
-              <textarea name="texto" required placeholder="Conteúdo da postagem..."></textarea>
-            </label>
+            <label>Título<input name="titulo" required placeholder="Ex: Semana da leitura" /></label>
+            <label>Texto<textarea name="texto" required></textarea></label>
             ${formImagem("post")}
             <label>Categoria
               <select name="categoria">
@@ -244,38 +247,34 @@
                 <option value="conquista">Conquista</option>
               </select>
             </label>
-            <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:normal;font-weight:500">
-              <input type="checkbox" name="fixada" style="width:auto;margin:0" />
-              Fixar no topo da home
+            <label style="display:flex;align-items:center;gap:8px;text-transform:none">
+              <input type="checkbox" name="fixada" style="width:auto" /> Fixar no topo
             </label>
             <button type="submit" class="admin-btn">Publicar postagem</button>
           </form>
         </div>
 
         <div class="admin-section">
-          <div class="admin-section-title">Postagens existentes (${posts.length})</div>
+          <div class="admin-section-title">Postagens (${posts.length})</div>
           ${posts.length ? `<div class="admin-list">${posts.map((p) => `
             <div class="admin-item">
               <div class="admin-item-content">
                 <div class="admin-item-title">${esc(p.titulo)}</div>
                 <div class="admin-item-meta">
-                  <span class="admin-badge ${p.categoria}">${p.categoria}</span>
-                  ${fmtData(p.criado_em)}
+                  <span class="admin-badge ${p.categoria}">${p.categoria}</span> ${fmtData(p.criado_em)}
                 </div>
                 <div class="admin-item-text">${esc(p.texto)}</div>
               </div>
               <div class="admin-item-actions">
                 <button class="admin-btn admin-btn-danger admin-btn-sm del-post" data-id="${p.id}">Excluir</button>
               </div>
-            </div>`).join("")}</div>` : `
-            <div class="admin-empty"><div class="admin-empty-icon">▤</div>Nenhuma postagem ainda</div>`}
+            </div>`).join("")}</div>` : `<div class="admin-empty"><div class="admin-empty-icon">▤</div>Nenhuma postagem</div>`}
         </div>
       `;
     }
 
     function bindPosts() {
       bindImagem("post");
-
       document.getElementById("f-post")?.addEventListener("submit", async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
@@ -292,15 +291,11 @@
             }),
           });
           carregar("posts");
-        } catch (err) {
-          alert("Erro: " + err.message);
-          esconderLoading();
-        }
+        } catch (err) { alert("Erro: " + err.message); esconderLoading(); }
       });
-
       document.querySelectorAll(".del-post").forEach((b) => {
         b.addEventListener("click", async () => {
-          if (!confirm("Excluir esta postagem?")) return;
+          if (!confirm("Excluir?")) return;
           mostrarLoading();
           await api("/api/posts/" + b.dataset.id, { method: "DELETE" });
           carregar("posts");
@@ -315,21 +310,18 @@
       const avisos = await api("/api/announcements").catch(() => []);
       return `
         <div class="admin-section">
-          <div class="admin-section-title">Novo aviso</div>
+          <div class="admin-section-title">➕ Novo aviso</div>
           <form id="f-aviso" class="admin-form">
-            <label>Texto do aviso
-              <textarea name="texto" required placeholder="Comunicado rápido..."></textarea>
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:normal;font-weight:500">
-              <input type="checkbox" name="urgente" style="width:auto;margin:0" />
-              Marcar como urgente
+            <label>Texto<textarea name="texto" required></textarea></label>
+            <label style="display:flex;align-items:center;gap:8px;text-transform:none">
+              <input type="checkbox" name="urgente" style="width:auto" /> Urgente
             </label>
             <button type="submit" class="admin-btn">Publicar aviso</button>
           </form>
         </div>
 
         <div class="admin-section">
-          <div class="admin-section-title">Avisos ativos (${avisos.length})</div>
+          <div class="admin-section-title">Avisos (${avisos.length})</div>
           ${avisos.length ? `<div class="admin-list">${avisos.map((a) => `
             <div class="admin-item">
               <div class="admin-item-content">
@@ -341,8 +333,7 @@
               <div class="admin-item-actions">
                 <button class="admin-btn admin-btn-danger admin-btn-sm del-aviso" data-id="${a.id}">Excluir</button>
               </div>
-            </div>`).join("")}</div>` : `
-            <div class="admin-empty"><div class="admin-empty-icon">◈</div>Nenhum aviso ativo</div>`}
+            </div>`).join("")}</div>` : `<div class="admin-empty"><div class="admin-empty-icon">◈</div>Nenhum aviso</div>`}
         </div>
       `;
     }
@@ -355,21 +346,14 @@
         try {
           await api("/api/announcements", {
             method: "POST",
-            body: JSON.stringify({
-              texto: fd.get("texto"),
-              urgente: fd.get("urgente") === "on",
-            }),
+            body: JSON.stringify({ texto: fd.get("texto"), urgente: fd.get("urgente") === "on" }),
           });
           carregar("avisos");
-        } catch (err) {
-          alert("Erro: " + err.message);
-          esconderLoading();
-        }
+        } catch (err) { alert("Erro: " + err.message); esconderLoading(); }
       });
-
       document.querySelectorAll(".del-aviso").forEach((b) => {
         b.addEventListener("click", async () => {
-          if (!confirm("Excluir aviso?")) return;
+          if (!confirm("Excluir?")) return;
           mostrarLoading();
           await api("/api/announcements/" + b.dataset.id, { method: "DELETE" });
           carregar("avisos");
@@ -384,30 +368,20 @@
       const evs = await api("/api/events").catch(() => []);
       return `
         <div class="admin-section">
-          <div class="admin-section-title">Novo evento</div>
+          <div class="admin-section-title">➕ Novo evento</div>
           <form id="f-evento" class="admin-form">
-            <label>Título
-              <input name="titulo" required />
-            </label>
-            <label>Descrição
-              <textarea name="descricao"></textarea>
-            </label>
-            <label>Local
-              <input name="local" placeholder="Ex: Quadra da escola" />
-            </label>
-            <label>Início
-              <input type="datetime-local" name="data_inicio" required />
-            </label>
-            <label>Fim
-              <input type="datetime-local" name="data_fim" />
-            </label>
+            <label>Título<input name="titulo" required /></label>
+            <label>Descrição<textarea name="descricao"></textarea></label>
+            <label>Local<input name="local" /></label>
+            <label>Início<input type="datetime-local" name="data_inicio" required /></label>
+            <label>Fim<input type="datetime-local" name="data_fim" /></label>
             ${formImagem("evento")}
             <button type="submit" class="admin-btn">Criar evento</button>
           </form>
         </div>
 
         <div class="admin-section">
-          <div class="admin-section-title">Eventos cadastrados (${evs.length})</div>
+          <div class="admin-section-title">Eventos (${evs.length})</div>
           ${evs.length ? `<div class="admin-list">${evs.map((e) => `
             <div class="admin-item">
               <div class="admin-item-content">
@@ -418,15 +392,13 @@
               <div class="admin-item-actions">
                 <button class="admin-btn admin-btn-danger admin-btn-sm del-evento" data-id="${e.id}">Excluir</button>
               </div>
-            </div>`).join("")}</div>` : `
-            <div class="admin-empty"><div class="admin-empty-icon">▦</div>Nenhum evento cadastrado</div>`}
+            </div>`).join("")}</div>` : `<div class="admin-empty"><div class="admin-empty-icon">▦</div>Nenhum evento</div>`}
         </div>
       `;
     }
 
     function bindEventos() {
       bindImagem("evento");
-
       document.getElementById("f-evento")?.addEventListener("submit", async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
@@ -444,15 +416,11 @@
             }),
           });
           carregar("eventos");
-        } catch (err) {
-          alert("Erro: " + err.message);
-          esconderLoading();
-        }
+        } catch (err) { alert("Erro: " + err.message); esconderLoading(); }
       });
-
       document.querySelectorAll(".del-evento").forEach((b) => {
         b.addEventListener("click", async () => {
-          if (!confirm("Excluir evento?")) return;
+          if (!confirm("Excluir?")) return;
           mostrarLoading();
           await api("/api/events/" + b.dataset.id, { method: "DELETE" });
           carregar("eventos");
@@ -467,11 +435,9 @@
       const ms = await api("/api/meals").catch(() => []);
       return `
         <div class="admin-section">
-          <div class="admin-section-title">Cadastrar merenda</div>
+          <div class="admin-section-title">➕ Cadastrar merenda</div>
           <form id="f-merenda" class="admin-form">
-            <label>Data
-              <input type="date" name="data" required />
-            </label>
+            <label>Data<input type="date" name="data" required /></label>
             <label>Período
               <select name="periodo" required>
                 <option value="manha">Manhã</option>
@@ -480,9 +446,7 @@
                 <option value="noite">Noite</option>
               </select>
             </label>
-            <label>Descrição
-              <textarea name="descricao" required placeholder="Ex: Arroz, feijão, frango grelhado e salada"></textarea>
-            </label>
+            <label>Descrição<textarea name="descricao" required></textarea></label>
             <button type="submit" class="admin-btn">Salvar merenda</button>
           </form>
         </div>
@@ -498,8 +462,7 @@
               <div class="admin-item-actions">
                 <button class="admin-btn admin-btn-danger admin-btn-sm del-merenda" data-id="${m.id}">Excluir</button>
               </div>
-            </div>`).join("")}</div>` : `
-            <div class="admin-empty"><div class="admin-empty-icon">◐</div>Nenhuma merenda cadastrada</div>`}
+            </div>`).join("")}</div>` : `<div class="admin-empty"><div class="admin-empty-icon">◐</div>Nenhuma merenda</div>`}
         </div>
       `;
     }
@@ -519,12 +482,8 @@
             }),
           });
           carregar("merenda");
-        } catch (err) {
-          alert("Erro: " + err.message);
-          esconderLoading();
-        }
+        } catch (err) { alert("Erro: " + err.message); esconderLoading(); }
       });
-
       document.querySelectorAll(".del-merenda").forEach((b) => {
         b.addEventListener("click", async () => {
           if (!confirm("Excluir?")) return;
@@ -542,17 +501,11 @@
       const us = await api("/api/users").catch(() => []);
       return `
         <div class="admin-section">
-          <div class="admin-section-title">Novo usuário</div>
+          <div class="admin-section-title">➕ Novo usuário</div>
           <form id="f-user" class="admin-form">
-            <label>Nome
-              <input name="nome" required />
-            </label>
-            <label>Email
-              <input type="email" name="email" required />
-            </label>
-            <label>Senha
-              <input type="password" name="senha" required />
-            </label>
+            <label>Nome<input name="nome" required /></label>
+            <label>Email<input type="email" name="email" required /></label>
+            <label>Senha<input type="password" name="senha" required /></label>
             <label>Tipo
               <select name="tipo">
                 <option value="funcionario">Funcionário</option>
@@ -560,9 +513,7 @@
                 <option value="admin">Administrador</option>
               </select>
             </label>
-            <label>Cargo (opcional)
-              <input name="cargo" placeholder="Ex: Merendeira, Coordenador" />
-            </label>
+            <label>Cargo (opcional)<input name="cargo" /></label>
             <button type="submit" class="admin-btn">Criar usuário</button>
           </form>
         </div>
@@ -578,8 +529,7 @@
                   ${esc(u.cargo || "—")} — ${esc(u.email)}
                 </div>
               </div>
-            </div>`).join("")}</div>` : `
-            <div class="admin-empty"><div class="admin-empty-icon">◇</div>Nenhum usuário</div>`}
+            </div>`).join("")}</div>` : `<div class="admin-empty"><div class="admin-empty-icon">◇</div>Nenhum usuário</div>`}
         </div>
       `;
     }
@@ -601,10 +551,7 @@
             }),
           });
           carregar("usuarios");
-        } catch (err) {
-          alert("Erro: " + err.message);
-          esconderLoading();
-        }
+        } catch (err) { alert("Erro: " + err.message); esconderLoading(); }
       });
     }
 
@@ -613,60 +560,22 @@
        ============================================================ */
     async function renderPedidos() {
       const pedidos = await api("/api/cadastro?status=pendente").catch(() => []);
-
       return `
         <div class="admin-section">
-          <div class="admin-section-title">
-            Pedidos pendentes (${pedidos.length})
-          </div>
-
-          ${pedidos.length ? `
-            <div class="admin-list">
-              ${pedidos.map((p) => `
-                <div class="admin-item">
-                  <div class="admin-item-content">
-                    ${p.foto_url ? `
-                      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-                        <img src="${esc(p.foto_url)}"
-                             style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #eef3fb" />
-                        <div>
-                          <div class="admin-item-title" style="margin:0">${esc(p.nome)}</div>
-                          <div style="font-size:0.78rem;color:#8895a7">${esc(p.email)}</div>
-                        </div>
-                      </div>
-                    ` : `
-                      <div class="admin-item-title">${esc(p.nome)}</div>
-                      <div style="font-size:0.78rem;color:#8895a7;margin-bottom:8px">${esc(p.email)}</div>
-                    `}
-                    <div class="admin-item-meta">
-                      <span class="admin-badge">${esc(p.tipo)}</span>
-                      ${p.cargo ? esc(p.cargo) + " — " : ""}
-                      Solicitado em ${fmtData(p.criado_em)}
-                    </div>
-                  </div>
-                  <div class="admin-item-actions" style="flex-direction:column;gap:6px">
-                    <button class="admin-btn admin-btn-sm aprovar-pedido" data-id="${p.id}"
-                            style="background:#38a169;color:white">✓ Aprovar</button>
-                    <button class="admin-btn admin-btn-danger admin-btn-sm rejeitar-pedido" data-id="${p.id}">✕ Rejeitar</button>
-                  </div>
+          <div class="admin-section-title">Pedidos pendentes (${pedidos.length})</div>
+          ${pedidos.length ? `<div class="admin-list">${pedidos.map((p) => `
+            <div class="admin-item">
+              <div class="admin-item-content">
+                <div class="admin-item-title">${esc(p.nome)}</div>
+                <div class="admin-item-meta">
+                  <span class="admin-badge">${esc(p.tipo)}</span> ${esc(p.email)}
                 </div>
-              `).join("")}
-            </div>
-          ` : `
-            <div class="admin-empty">
-              <div class="admin-empty-icon">◉</div>
-              Nenhum pedido pendente no momento
-            </div>
-          `}
-        </div>
-
-        <div class="admin-section">
-          <div class="admin-section-title">Histórico</div>
-          <p style="color:#8895a7;font-size:0.85rem">
-            Aqui você pode ver os pedidos já analisados.
-          </p>
-          <button class="admin-btn admin-btn-sec" id="btn-historico">Ver aprovados e rejeitados</button>
-          <div id="historico-pedidos" style="margin-top:16px"></div>
+              </div>
+              <div class="admin-item-actions">
+                <button class="admin-btn aprovar-pedido" data-id="${p.id}" style="background:#38a169;color:white">✓ Aprovar</button>
+                <button class="admin-btn admin-btn-danger rejeitar-pedido" data-id="${p.id}">✕ Rejeitar</button>
+              </div>
+            </div>`).join("")}</div>` : `<div class="admin-empty"><div class="admin-empty-icon">◉</div>Nenhum pedido</div>`}
         </div>
       `;
     }
@@ -674,69 +583,373 @@
     function bindPedidos() {
       document.querySelectorAll(".aprovar-pedido").forEach((b) => {
         b.addEventListener("click", async () => {
-          if (!confirm("Aprovar este cadastro?\n\nO usuário poderá fazer login imediatamente.")) return;
+          if (!confirm("Aprovar este cadastro?")) return;
           mostrarLoading("Aprovando...");
           try {
-            const r = await api(`/api/cadastro/${b.dataset.id}/aprovar`, { method: "POST" });
-            alert("✅ " + (r.mensagem || "Cadastro aprovado!"));
+            await api(`/api/cadastro/${b.dataset.id}/aprovar`, { method: "POST" });
+            alert("✅ Aprovado!");
             carregar("pedidos");
-          } catch (err) {
-            alert("Erro: " + err.message);
-            esconderLoading();
-          }
+          } catch (e) { alert("Erro: " + e.message); esconderLoading(); }
         });
       });
-
       document.querySelectorAll(".rejeitar-pedido").forEach((b) => {
         b.addEventListener("click", async () => {
           const motivo = prompt("Motivo da rejeição (opcional):");
           if (motivo === null) return;
-
           mostrarLoading("Rejeitando...");
           try {
             await api(`/api/cadastro/${b.dataset.id}/rejeitar`, {
               method: "POST",
               body: JSON.stringify({ motivo }),
             });
-            alert("Pedido rejeitado");
             carregar("pedidos");
-          } catch (err) {
-            alert("Erro: " + err.message);
-            esconderLoading();
-          }
+          } catch (e) { alert("Erro: " + e.message); esconderLoading(); }
+        });
+      });
+    }
+
+    /* ============================================================
+       ANÁLISE PREDITIVA (EVASÃO)
+       ============================================================ */
+    async function renderEvasaoAdmin() {
+      const stats = await api("/api/evasao/estatisticas").catch(() => ({
+        total: 0, critico: 0, alto: 0, medio: 0, baixo: 0,
+      }));
+
+      return `
+        <div class="admin-section">
+          <div class="admin-section-title">⚠️ Análise Preditiva de Evasão</div>
+          <p style="color:#5a6472;font-size:0.9rem;margin-bottom:18px">
+            Analisa todos os alunos e identifica risco de evasão baseado em 4 fatores:
+            <strong>faltas</strong>, <strong>queda de notas</strong>,
+            <strong>atividades pendentes</strong> e <strong>dias sem acessar</strong>.
+          </p>
+
+          ${stats.total > 0 ? `
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px">
+              ${cardEstat("👥", stats.total, "Total", "#2a5298")}
+              ${cardEstat("🚨", stats.critico, "Crítico", "#e53e3e")}
+              ${cardEstat("⚠️", stats.alto, "Alto", "#ed8936")}
+              ${cardEstat("⚡", stats.medio, "Médio", "#ecc94b")}
+              ${cardEstat("✅", stats.baixo, "Baixo", "#38a169")}
+            </div>
+          ` : ""}
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <a href="/admin-evasao.html" class="admin-btn" style="text-decoration:none">📊 Abrir dashboard completo</a>
+            <button id="btn-reanalisar" class="admin-btn admin-btn-sec">🔄 Re-analisar todos</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function cardEstat(icone, valor, label, cor) {
+      return `
+        <div style="background:white;border-radius:12px;padding:16px;text-align:center;border-left:4px solid ${cor};box-shadow:0 2px 8px rgba(0,0,0,0.05)">
+          <div style="font-size:1.6rem;margin-bottom:6px">${icone}</div>
+          <div style="font-size:1.5rem;font-weight:900;color:#1e3c72">${valor}</div>
+          <div style="font-size:0.68rem;color:#8895a7;text-transform:uppercase;letter-spacing:0.4px;font-weight:700">${label}</div>
+        </div>`;
+    }
+
+    function bindEvasaoAdmin() {
+      document.getElementById("btn-reanalisar")?.addEventListener("click", async () => {
+        if (!confirm("Analisar TODOS os alunos? Pode levar 1-2 min.")) return;
+        mostrarLoading("Analisando...");
+        try {
+          const r = await api("/api/evasao/analisar", { method: "POST" });
+          alert(`✅ ${r.analisados} alunos analisados!`);
+          carregar("evasao");
+        } catch (e) {
+          alert("Erro: " + e.message);
+          esconderLoading();
+        }
+      });
+    }
+
+    /* ============================================================
+       CÓDIGOS DE VÍNCULO
+       ============================================================ */
+    async function renderCodigos() {
+      const codigos = await api("/api/pais/admin/codigos").catch(() => []);
+
+      return `
+        <div class="admin-section">
+          <div class="admin-section-title">🔑 Gerar código de vínculo</div>
+          <p style="color:#5a6472;font-size:0.85rem;margin-bottom:16px">
+            Gere um código e entregue ao responsável do aluno. Ele usa esse código no cadastro
+            do Portal do Responsável para vincular o filho.
+          </p>
+          <form id="f-codigo" class="admin-form">
+            <label>Matrícula do aluno
+              <input name="aluno_matricula" required placeholder="Ex: 202430395866" />
+            </label>
+            <label>Nome do aluno
+              <input name="aluno_nome" required placeholder="Ex: Pedro Victor" />
+            </label>
+            <button type="submit" class="admin-btn">Gerar código</button>
+          </form>
+        </div>
+
+        <div class="admin-section">
+          <div class="admin-section-title">Códigos gerados (${codigos.length})</div>
+          ${codigos.length ? `<div class="admin-list">${codigos.map((c) => `
+            <div class="admin-item">
+              <div class="admin-item-content">
+                <div class="admin-item-title" style="font-family:monospace;font-size:1.15rem;letter-spacing:2px;color:#2a5298">
+                  ${esc(c.codigo)}
+                </div>
+                <div class="admin-item-meta">
+                  Aluno: <strong>${esc(c.aluno_nome || "?")}</strong> (${esc(c.aluno_matricula)}) —
+                  ${c.usado ? "✅ Usado" : "⏳ Não usado"}
+                </div>
+              </div>
+              <div class="admin-item-actions">
+                ${!c.usado ? `<button class="admin-btn admin-btn-sec admin-btn-sm copiar-codigo" data-codigo="${esc(c.codigo)}">📋 Copiar</button>` : ""}
+              </div>
+            </div>`).join("")}</div>` : `
+            <div class="admin-empty"><div class="admin-empty-icon">🔑</div>Nenhum código gerado ainda</div>`}
+        </div>
+      `;
+    }
+
+    function bindCodigos() {
+      document.getElementById("f-codigo")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        mostrarLoading("Gerando código...");
+        try {
+          const r = await api("/api/pais/admin/gerar-codigo", {
+            method: "POST",
+            body: JSON.stringify({
+              aluno_matricula: fd.get("aluno_matricula"),
+              aluno_nome: fd.get("aluno_nome"),
+            }),
+          });
+          alert(`✅ Código gerado: ${r.codigo}\n\nEntregue ao responsável do aluno.`);
+          carregar("codigos");
+        } catch (err) {
+          alert("Erro: " + err.message);
+          esconderLoading();
+        }
+      });
+
+      document.querySelectorAll(".copiar-codigo").forEach((b) => {
+        b.addEventListener("click", () => {
+          navigator.clipboard.writeText(b.dataset.codigo);
+          const txt = b.textContent;
+          b.textContent = "✓ Copiado!";
+          setTimeout(() => { b.textContent = txt; }, 1500);
+        });
+      });
+    }
+
+    /* ============================================================
+       MURAL DE HONRA (admin)
+       ============================================================ */
+    async function renderMuralAdmin() {
+      const atual = await api("/api/premios/mural/atual").catch(() => []);
+
+      return `
+        <div class="admin-section">
+          <div class="admin-section-title">🏛️ Mural de Honra — Destaques do mês</div>
+          <p style="color:#5a6472;font-size:0.9rem;margin-bottom:16px">
+            O sistema pega automaticamente os <strong>3 alunos com mais pontos</strong> do mês
+            e coloca no Mural de Honra público.
+          </p>
+          <button id="btn-gerar-mural" class="admin-btn">🎖️ Gerar Mural do Mês</button>
+        </div>
+
+        ${atual.length ? `
+          <div class="admin-section">
+            <div class="admin-section-title">Destaques atuais (${atual.length})</div>
+            <div class="admin-list">
+              ${atual.map((a) => `
+                <div class="admin-item">
+                  <div class="admin-item-content">
+                    <div class="admin-item-title">
+                      ${a.posicao === 1 ? "🥇" : a.posicao === 2 ? "🥈" : "🥉"}
+                      ${esc(a.aluno_nome)}
+                    </div>
+                    <div class="admin-item-meta">
+                      ${esc(a.turma || "—")} — ${a.pontos} pts
+                    </div>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        ` : ""}
+      `;
+    }
+
+    function bindMuralAdmin() {
+      document.getElementById("btn-gerar-mural")?.addEventListener("click", async () => {
+        if (!confirm("Gerar Mural de Honra deste mês com o top 3 alunos?")) return;
+        mostrarLoading("Gerando...");
+        try {
+          await api("/api/premios/mural/gerar", { method: "POST" });
+          alert("✅ Mural atualizado!");
+          carregar("mural");
+        } catch (e) {
+          alert("Erro: " + e.message);
+          esconderLoading();
+        }
+      });
+    }
+
+    /* ============================================================
+       CERTIFICADOS (admin)
+       ============================================================ */
+    async function renderCertificados() {
+      const [certificados, alunos] = await Promise.all([
+        api("/api/premios/certificados").catch(() => []),
+        api("/api/alunos/lista").catch(() => []),
+      ]);
+
+      const turmas = [...new Set(alunos.map((a) => a.turma).filter(Boolean))].sort();
+
+      return `
+        <div class="admin-section">
+          <div class="admin-section-title">🎖️ Emitir certificado</div>
+          <form id="f-certificado" class="admin-form">
+            <label>Título do certificado
+              <input name="titulo" required placeholder="Ex: Participação na Semana da Leitura" />
+            </label>
+            <label>Descrição (opcional)
+              <textarea name="descricao" placeholder="Detalhes do certificado..."></textarea>
+            </label>
+            <label>Tipo
+              <select name="tipo">
+                <option value="conquista">🏆 Conquista</option>
+                <option value="destaque">⭐ Destaque</option>
+                <option value="participacao">📜 Participação</option>
+                <option value="menção">🎖️ Menção honrosa</option>
+                <option value="personalizado">✏️ Personalizado</option>
+              </select>
+            </label>
+
+            <label>Turma (para emitir pra todos)
+              <select id="turma-cert">
+                <option value="">— Selecione a turma —</option>
+                ${turmas.map((t) => `<option value="${esc(t)}">${esc(t)}</option>`).join("")}
+              </select>
+            </label>
+
+            <label style="display:flex;align-items:center;gap:8px;text-transform:none">
+              <input type="radio" name="modo" value="turma" checked style="width:auto" />
+              Emitir para <strong>toda a turma</strong>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;text-transform:none">
+              <input type="radio" name="modo" value="individual" style="width:auto" />
+              Emitir para <strong>alunos específicos</strong>
+            </label>
+
+            <div id="alunos-individual" style="display:none;margin-top:12px">
+              <label>Escolha os alunos
+                <div id="lista-alunos-checkbox" style="max-height:250px;overflow-y:auto;background:#fafbfc;padding:12px;border-radius:10px;margin-top:8px">
+                  ${alunos.length ? alunos.map((a) => `
+                    <label style="display:flex;align-items:center;gap:10px;padding:8px;text-transform:none;font-weight:400;margin:0">
+                      <input type="checkbox" class="aluno-check" value="${esc(a.matricula)}"
+                             data-nome="${esc(a.nome || '')}" data-turma="${esc(a.turma || '')}" style="width:auto" />
+                      <span><strong>${esc(a.nome)}</strong> — ${esc(a.turma || '—')}</span>
+                    </label>
+                  `).join("") : "<p style='color:#8895a7;font-size:0.85rem'>Nenhum aluno cadastrado</p>"}
+                </div>
+              </label>
+            </div>
+
+            <button type="submit" class="admin-btn">🎖️ Emitir certificados</button>
+          </form>
+        </div>
+
+        <div class="admin-section">
+          <div class="admin-section-title">Certificados emitidos (${certificados.length})</div>
+          ${certificados.length ? `<div class="admin-list">${certificados.map((c) => `
+            <div class="admin-item">
+              <div class="admin-item-content">
+                <div class="admin-item-title">🎖️ ${esc(c.titulo)}</div>
+                <div class="admin-item-meta">
+                  <strong>${esc(c.aluno_nome)}</strong> (${esc(c.turma || "—")}) — ${fmtData(c.emitido_em)}
+                </div>
+                <div class="admin-item-meta" style="margin-top:4px">
+                  Código: <code style="font-family:monospace">${esc(c.codigo_verificacao)}</code>
+                </div>
+              </div>
+              <div class="admin-item-actions">
+                <button class="admin-btn admin-btn-danger admin-btn-sm del-cert" data-id="${c.id}">Excluir</button>
+              </div>
+            </div>`).join("")}</div>` : `<div class="admin-empty"><div class="admin-empty-icon">🎖️</div>Nenhum certificado emitido</div>`}
+        </div>
+      `;
+    }
+
+    function bindCertificados() {
+      // Toggle entre turma / individual
+      document.querySelectorAll('input[name="modo"]').forEach((r) => {
+        r.addEventListener("change", () => {
+          const div = document.getElementById("alunos-individual");
+          div.style.display = r.value === "individual" && r.checked ? "block" : "none";
         });
       });
 
-      document.getElementById("btn-historico")?.addEventListener("click", async () => {
-        const el = document.getElementById("historico-pedidos");
-        mostrarLoading("Carregando histórico...");
-        try {
-          const todos = await api("/api/cadastro?status=todos");
-          const analisados = todos.filter((p) => p.status !== "pendente");
+      document.getElementById("f-certificado")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const modo = fd.get("modo");
 
-          el.innerHTML = analisados.length
-            ? `<div class="admin-list">${analisados.map((p) => `
-                <div class="admin-item">
-                  <div class="admin-item-content">
-                    <div class="admin-item-title">${esc(p.nome)}</div>
-                    <div class="admin-item-meta">
-                      <span class="admin-badge" style="
-                        background:${p.status === "aprovado" ? "#d1fae5" : "#fee2e2"};
-                        color:${p.status === "aprovado" ? "#065f46" : "#991b1b"}">
-                        ${p.status}
-                      </span>
-                      ${esc(p.email)} — ${esc(p.tipo)}
-                    </div>
-                    ${p.motivo_rejeicao ? `<div class="admin-item-text">Motivo: ${esc(p.motivo_rejeicao)}</div>` : ""}
-                  </div>
-                </div>
-              `).join("")}</div>`
-            : `<p style="color:#8895a7;font-size:0.85rem">Nenhum pedido analisado ainda.</p>`;
+        let destinatarios = [];
+
+        if (modo === "turma") {
+          const turma = fd.get("turma_cert") || document.getElementById("turma-cert").value;
+          if (!turma) return alert("Escolha a turma");
+
+          const alunos = await api("/api/alunos/lista").catch(() => []);
+          destinatarios = alunos
+            .filter((a) => a.turma === turma)
+            .map((a) => ({ matricula: a.matricula, nome: a.nome, turma: a.turma }));
+
+          if (destinatarios.length === 0) return alert("Nenhum aluno nessa turma");
+        } else {
+          document.querySelectorAll(".aluno-check:checked").forEach((c) => {
+            destinatarios.push({
+              matricula: c.value,
+              nome: c.dataset.nome,
+              turma: c.dataset.turma,
+            });
+          });
+
+          if (destinatarios.length === 0) return alert("Escolha pelo menos um aluno");
+        }
+
+        if (!confirm(`Emitir ${destinatarios.length} certificado(s)?`)) return;
+
+        mostrarLoading("Emitindo...");
+        try {
+          await api("/api/premios/certificados/emitir", {
+            method: "POST",
+            body: JSON.stringify({
+              destinatarios,
+              tipo: fd.get("tipo"),
+              titulo: fd.get("titulo"),
+              descricao: fd.get("descricao"),
+            }),
+          });
+          alert(`✅ ${destinatarios.length} certificado(s) emitido(s)!`);
+          carregar("certificados");
         } catch (err) {
-          el.innerHTML = `<p style="color:#c53030">Erro: ${esc(err.message)}</p>`;
-        } finally {
+          alert("Erro: " + err.message);
           esconderLoading();
         }
+      });
+
+      document.querySelectorAll(".del-cert").forEach((b) => {
+        b.addEventListener("click", async () => {
+          if (!confirm("Excluir certificado?")) return;
+          mostrarLoading();
+          await api("/api/premios/certificados/" + b.dataset.id, { method: "DELETE" });
+          carregar("certificados");
+        });
       });
     }
 
@@ -744,12 +957,16 @@
        BIND CENTRAL
        ============================================================ */
     function bind(aba) {
-      if (aba === "posts")    bindPosts();
-      if (aba === "avisos")   bindAvisos();
-      if (aba === "eventos")  bindEventos();
-      if (aba === "merenda")  bindMerenda();
-      if (aba === "usuarios") bindUsuarios();
-      if (aba === "pedidos")  bindPedidos();
+      if (aba === "posts")        bindPosts();
+      if (aba === "avisos")       bindAvisos();
+      if (aba === "eventos")      bindEventos();
+      if (aba === "merenda")      bindMerenda();
+      if (aba === "usuarios")     bindUsuarios();
+      if (aba === "pedidos")      bindPedidos();
+      if (aba === "evasao")       bindEvasaoAdmin();
+      if (aba === "codigos")      bindCodigos();
+      if (aba === "mural")        bindMuralAdmin();
+      if (aba === "certificados") bindCertificados();
     }
 
     /* ============================================================

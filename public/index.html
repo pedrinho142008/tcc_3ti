@@ -17,8 +17,10 @@
         <a href="/eventos.html">Eventos</a>
         <a href="/merenda.html">Merenda</a>
         <a href="/contato.html">Contato</a>
+        <a href="/gamificacao.html">🏆 Gamificação</a>
+        <a href="/pais-login.html">👨‍👩‍👧 Responsáveis</a>
         <a href="/login.html">Login</a>
-        <a href="#" data-portal class="cta">Portal do Estudante</a>
+        <a href="/portal-aluno.html" class="cta">Portal do Estudante</a>
       </div>
     </nav>
 
@@ -26,7 +28,7 @@
       <h1>Bem-vindo à <span>E.E.I.M</span></h1>
       <p>Escola Estadual Ielmo Marinho — Educação pública de qualidade no coração do Rio Grande do Norte.</p>
       <div class="hero-actions">
-        <a href="#" data-portal class="btn">🎓 Portal do Estudante</a>
+        <a href="/portal-aluno.html" class="btn">🎓 Portal do Estudante</a>
         <a href="/contato.html" class="btn btn-outline">📍 Como chegar</a>
       </div>
     </section>
@@ -55,13 +57,11 @@
     </footer>
   </div>
 
-  <!-- CONTEÚDO (módulo ES) -->
   <script type="module">
     import { api, esc, fmtData, fmtCurta, initConfig, periodoNome } from "/assets/js/shared.js";
 
     initConfig();
 
-    // Carrega tudo em paralelo
     const [avisos, posts, merenda, eventos] = await Promise.all([
       api("/api/announcements").catch(() => []),
       api("/api/posts").catch(() => []),
@@ -69,7 +69,6 @@
       api("/api/events").catch(() => []),
     ]);
 
-    // Avisos
     if (avisos.length) {
       document.getElementById("avisos").innerHTML = avisos.map(a =>
         `<div class="aviso-banner ${a.urgente ? "urgente" : ""}">
@@ -78,7 +77,6 @@
         </div>`).join("");
     }
 
-    // Posts
     document.getElementById("lista-posts").innerHTML = posts.length
       ? posts.map(p => `
           <article class="post">
@@ -93,7 +91,6 @@
           </article>`).join("")
       : `<p class="muted">Nenhuma postagem ainda.</p>`;
 
-    // Merenda
     document.getElementById("merenda-hoje").innerHTML = merenda.length
       ? merenda.map(m => `
           <div class="tile">
@@ -103,7 +100,6 @@
           </div>`).join("")
       : `<p class="muted" style="grid-column:1/-1;text-align:center;padding:20px">Nenhuma merenda cadastrada para hoje.</p>`;
 
-    // Eventos
     document.getElementById("lista-eventos").innerHTML = eventos.length
       ? eventos.slice(0, 4).map(e => `
           <div class="tile">
@@ -114,7 +110,6 @@
           </div>`).join("")
       : `<p class="muted" style="grid-column:1/-1;text-align:center;padding:20px">Nenhum evento agendado.</p>`;
 
-    // Toggle dos posts
     document.querySelectorAll(".post-more").forEach(btn => {
       btn.addEventListener("click", () => {
         const art = btn.closest(".post");
@@ -123,6 +118,5 @@
       });
     });
   </script>
-  <script src="/assets/js/menu.js"></script>
 </body>
 </html>

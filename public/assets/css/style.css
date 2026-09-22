@@ -883,3 +883,51 @@ textarea:focus {
   padding: 20px;
   font-size: 0.9rem;
 }
+
+/* ============================================================
+   FIX: Inputs de telefone, número e outros tipos
+   ============================================================ */
+
+input[type="tel"],
+input[type="number"],
+input[type="url"],
+input[type="search"] {
+  width: 100%;
+  padding: 14px 18px;
+  margin-top: 8px;
+  border: 1.5px solid var(--cinza-borda);
+  border-radius: var(--raio-pill);
+  font-family: inherit;
+  font-size: 0.93rem;
+  color: #2d3748;
+  background: #f8fafc;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="tel"]:focus,
+input[type="number"]:focus,
+input[type="url"]:focus,
+input[type="search"]:focus {
+  outline: none;
+  border-color: var(--azul-medio);
+  background: white;
+  box-shadow: 0 0 0 4px rgba(42, 82, 152, 0.10);
+}
+
+input[type="tel"]::placeholder,
+input[type="number"]::placeholder {
+  color: #a0aec0;
+}
+
+/* Remove spinner do input number */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}

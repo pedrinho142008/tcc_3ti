@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadastro do Responsável — E.E.I.M</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/responsivo.css" />
+  <link rel="stylesheet" href="/assets/css/pais.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="/" class="nav-brand">🏫 E.E.I.M <span class="badge">Ielmo Marinho</span></a>
+      <button class="menu-btn" type="button" aria-label="Menu">☰</button>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/pais-login.html">Login</a>
+      </div>
+    </nav>
+
+    <div class="card login-wrap">
+      <div class="pais-header">
+        <div class="pais-icone">👨‍👩‍👧</div>
+        <h1>Criar conta</h1>
+        <p>Acompanhe a vida escolar do seu filho</p>
+      </div>
+
+      <form id="form-cadastro">
+        <label>Nome completo
+          <input type="text" id="nome" required placeholder="Maria da Silva" autocomplete="name" />
+        </label>
+
+        <label>Email
+          <input type="email" id="email" required placeholder="maria@email.com" autocomplete="email" inputmode="email" />
+        </label>
+
+        <label>Telefone (opcional)
+          <input type="tel" id="telefone" placeholder="(84) 99999-9999" inputmode="tel" autocomplete="tel" />
+        </label>
+
+        <label>Parentesco
+          <select id="parentesco" required>
+            <option value="">Selecione</option>
+            <option value="mae">Mãe</option>
+            <option value="pai">Pai</option>
+            <option value="avo">Avô / Avó</option>
+            <option value="tio">Tio / Tia</option>
+            <option value="responsavel_legal">Responsável legal</option>
+            <option value="outro">Outro</option>
+          </select>
+        </label>
+
+        <label>Senha
+          <input type="password" id="senha" required minlength="6" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+        </label>
+
+        <div class="form-divisor">
+          <span>Dados do aluno</span>
+        </div>
+
+        <label>Matrícula do aluno
+          <input type="text" id="matricula" required inputmode="numeric" placeholder="Ex: 202430395866" />
+          <small class="form-hint">A matrícula está no boletim do aluno ou você pode pedir na secretaria</small>
+        </label>
+
+        <button type="submit" class="btn-pais" id="btn-enviar">
+          <span id="btn-texto">Enviar cadastro</span>
+        </button>
+
+        <p id="msg" class="msg-status"></p>
+      </form>
+
+      <div class="pais-rodape">
+        Já tem conta? <a href="/pais-login.html">Fazer login</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelector(".menu-btn")?.addEventListener("click", () => {
+      document.querySelector(".nav-links")?.classList.toggle("open");
+    });
+
+    document.getElementById("telefone")?.addEventListener("input", (e) => {
+      let v = e.target.value.replace(/\D/g, "");
+      if (v.length > 11) v = v.slice(0, 11);
+      if (v.length > 10) v = v.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
+      else if (v.length > 6) v = v.replace(/^(\d{2})(\d{4})(\d{0,4})$/, "($1) $2-$3");
+      else if (v.length > 2) v = v.replace(/^(\d{2})(\d{0,5})$/, "($1) $2");
+      else if (v.length > 0) v = v.replace(/^(\d{0,2})$/, "($1");
+      e.target.value = v;
+    });
+
+    document.getElementById("matricula")?.addEventListener("input", (e) => {
+      e.target.value = e.target.value.replace(/\D/g, "");
+    });
+
+    document.getElementById("form-cadastro").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("msg");
+      const btn = document.getElementById("btn-enviar");
+      const btnTexto = document.getElementById("btn-texto");
+
+      msg.textContent = "";
+      msg.className = "msg-status";
+      btn.disabled = true;
+      btnTexto.textContent = "Enviando...";
+
+      const body = {
+        nome: document.getElementById("nome").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        senha: document.getElementById("senha").value,
+        telefone: document.getElementById("telefone").value.trim(),
+        parentesco: document.getElementById("parentesco").value,
+        matricula_aluno: document.getElementById("matricula").value.trim(),
+      };
+
+      try {
+        const r = await fetch("/api/pais/cadastro", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.erro || "Erro ao criar conta");
+
+        msg.className = "msg-status sucesso";
+        msg.innerHTML = `
+          ✅ <strong>Cadastro enviado!</strong><br>
+          <span style="font-size:0.85rem">
+            Aguarde aprovação do administrador. Você receberá acesso em breve.
+          </span>
+        `;
+
+        document.getElementById("form-cadastro").reset();
+
+        setTimeout(() => {
+          window.location.href = "/pais-login.html";
+        }, 3000);
+      } catch (err) {
+        msg.className = "msg-status erro";
+        msg.textContent = "❌ " + err.message;
+        btn.disabled = false;
+        btnTexto.textContent = "Enviar cadastro";
+      }
+    });
+  </script>
+</body>
+</html>

@@ -25,8 +25,6 @@ async function carregar(nome, caminho) {
     console.log(`  ✅ ${nome}`);
   } catch (e) {
     console.error(`  ❌ ${nome}: ${e.message}`);
-    console.error(`     Stack: ${e.stack?.slice(0, 500)}`);
-    rotas[nome] = null;
     errosCarregamento[nome] = e.message;
   }
 }
@@ -39,18 +37,22 @@ await carregar("users", "./routes/users.js");
 await carregar("upload", "./routes/upload.js");
 await carregar("atividades", "./routes/atividades.js");
 await carregar("aluno", "./routes/aluno.js");
+await carregar("alunos", "./routes/alunos.js");
 await carregar("scraper", "./routes/scraper.js");
 await carregar("cadastro", "./routes/cadastro.js");
 await carregar("verificarMatricula", "./routes/verificarMatricula.js");
+await carregar("classroom", "./routes/classroom.js");
+await carregar("insights", "./routes/insights.js");
+await carregar("premios", "./routes/premios.js");
+await carregar("pais", "./routes/pais.js");
+await carregar("evasao", "./routes/evasao.js");
 
-console.log("");
-console.log("📋 Rotas carregadas:");
+console.log("\n📋 Rotas carregadas:");
 for (const [nome, mod] of Object.entries(rotas)) {
   console.log(`   ${mod ? "✅" : "❌"} ${nome}`);
 }
 console.log("");
 
-/* ---------- Cache ---------- */
 const cache = new Map();
 const CACHE_TTL = 5000;
 
@@ -67,20 +69,24 @@ app.use("/api/", (req, res, next) => {
   next();
 });
 
-/* ---------- Monta rotas ---------- */
 if (rotas.posts) app.use("/api/posts", rotas.posts);
 if (rotas.announcements) app.use("/api/announcements", rotas.announcements);
 if (rotas.meals) app.use("/api/meals", rotas.meals);
 if (rotas.events) app.use("/api/events", rotas.events);
 if (rotas.users) app.use("/api/users", rotas.users);
 if (rotas.aluno) app.use("/api/aluno", rotas.aluno);
+if (rotas.alunos) app.use("/api/alunos", rotas.alunos);
 if (rotas.atividades) app.use("/api/atividades", rotas.atividades);
 if (rotas.scraper) app.use("/api/scraper", rotas.scraper);
 if (rotas.cadastro) app.use("/api/cadastro", rotas.cadastro);
 if (rotas.verificarMatricula) app.use("/api/verificar-matricula", rotas.verificarMatricula);
+if (rotas.classroom) app.use("/api/classroom", rotas.classroom);
+if (rotas.insights) app.use("/api/insights", rotas.insights);
+if (rotas.premios) app.use("/api/premios", rotas.premios);
+if (rotas.pais) app.use("/api/pais", rotas.pais);
+if (rotas.evasao) app.use("/api/evasao", rotas.evasao);
 if (rotas.upload) app.use("/api", rotas.upload);
 
-/* ---------- Config ---------- */
 app.get("/api/config", (req, res) => {
   res.json({
     portalEstudante: "/portal-aluno.html",
@@ -92,7 +98,6 @@ app.get("/api/config", (req, res) => {
   });
 });
 
-/* ---------- Healthcheck com detalhes ---------- */
 app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
@@ -104,7 +109,6 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-/* ---------- Static ---------- */
 app.use(express.static(path.join(__dirname, "..", "public")));
 
 app.get("*", (req, res) => {
