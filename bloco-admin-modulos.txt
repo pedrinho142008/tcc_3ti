@@ -1,0 +1,3 @@
+// Modulos externos
+import { renderManutencao, bindManutencao, renderDocumentos, bindDocumentos, renderMuralAdmin, bindMuralAdmin } from "/assets/js/modulos.js";
+

@@ -1,0 +1,479 @@
+/* ============================================================
+   DASHBOARD ANIMADO — Professor
+   ============================================================ */
+
+/* Grid de cards */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+/* Card base */
+.dash-card {
+  background: white;
+  border-radius: 20px;
+  padding: 20px 18px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(30, 60, 114, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+}
+
+.dash-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(30, 60, 114, 0.15);
+}
+
+.dash-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #1e3c72, #4a7bc8);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s;
+}
+
+.dash-card:hover::before {
+  transform: scaleX(1);
+}
+
+/* Ícone do card */
+.dash-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  margin-bottom: 14px;
+  transition: transform 0.3s;
+}
+
+.dash-card:hover .dash-icon {
+  transform: scale(1.1) rotate(-5deg);
+}
+
+.dash-icon.azul { background: linear-gradient(135deg, #eef3fb, #dbe7fa); }
+.dash-icon.verde { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
+.dash-icon.laranja { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+.dash-icon.vermelho { background: linear-gradient(135deg, #fee2e2, #fecaca); }
+.dash-icon.roxo { background: linear-gradient(135deg, #ede9fe, #ddd6fe); }
+
+/* Número animado */
+.dash-valor {
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.5px;
+  color: #1e3c72;
+  transition: color 0.3s;
+}
+
+.dash-valor.verde { color: #38a169; }
+.dash-valor.laranja { color: #ed8936; }
+.dash-valor.vermelho { color: #e53e3e; }
+.dash-valor.roxo { color: #7c3aed; }
+
+.dash-label {
+  font-size: 0.72rem;
+  color: #8895a7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+/* Barra de progresso animada */
+.dash-progresso {
+  margin-top: 12px;
+  height: 8px;
+  background: #f0f4fb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.dash-progresso-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #1e3c72, #4a7bc8);
+  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 8px rgba(74, 123, 200, 0.5);
+}
+
+/* Gráfico de barras */
+.dash-chart {
+  background: white;
+  border-radius: 20px;
+  padding: 22px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(30, 60, 114, 0.06);
+}
+
+.dash-chart-titulo {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1e3c72;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dash-barras {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 8px;
+  height: 140px;
+}
+
+.dash-barra-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.dash-barra {
+  width: 100%;
+  max-width: 42px;
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(180deg, #4a7bc8, #1e3c72);
+  transition: height 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+  height: 0;
+  min-height: 4px;
+  position: relative;
+  cursor: pointer;
+}
+
+.dash-barra:hover {
+  filter: brightness(1.15);
+  transform: scaleY(1.02);
+  transform-origin: bottom;
+}
+
+.dash-barra-valor {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #1e3c72;
+}
+
+.dash-barra-label {
+  font-size: 0.65rem;
+  color: #8895a7;
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+}
+
+/* Donut de progresso */
+.dash-donut {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  width: 140px;
+  height: 140px;
+  margin: 0 auto;
+}
+
+.dash-donut svg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.dash-donut circle {
+  fill: none;
+  stroke-width: 12;
+  stroke-linecap: round;
+}
+
+.dash-donut .bg {
+  stroke: #f0f4fb;
+}
+
+.dash-donut .fill {
+  stroke: url(#gradDonut);
+  transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dash-donut-centro {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.dash-donut-centro .v {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #1e3c72;
+  line-height: 1;
+}
+
+.dash-donut-centro .l {
+  font-size: 0.62rem;
+  color: #8895a7;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+/* Lista de próximos prazos */
+.dash-prazos {
+  background: white;
+  border-radius: 20px;
+  padding: 22px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(30, 60, 114, 0.06);
+}
+
+.dash-prazo-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  border-left: 4px solid #2a5298;
+  transition: all 0.25s;
+  animation: slideIn 0.4s ease-out backwards;
+}
+
+.dash-prazo-item:hover {
+  background: white;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(30, 60, 114, 0.08);
+}
+
+.dash-prazo-item.urgente {
+  border-left-color: #e53e3e;
+  background: #fef2f2;
+}
+
+.dash-prazo-item.atencao {
+  border-left-color: #ed8936;
+  background: #fffbeb;
+}
+
+.dash-prazo-dias {
+  min-width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: #1e3c72;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.dash-prazo-item.urgente .dash-prazo-dias { background: #e53e3e; }
+.dash-prazo-item.atencao .dash-prazo-dias { background: #ed8936; }
+
+.dash-prazo-dias .num {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.dash-prazo-dias .txt {
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+  opacity: 0.85;
+}
+
+.dash-prazo-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-prazo-titulo {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e3c72;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-prazo-meta {
+  font-size: 0.72rem;
+  color: #8895a7;
+}
+
+/* Animação de entrada */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Stagger: itens aparecem um depois do outro */
+.dash-prazo-item:nth-child(1) { animation-delay: 0.05s; }
+.dash-prazo-item:nth-child(2) { animation-delay: 0.1s; }
+.dash-prazo-item:nth-child(3) { animation-delay: 0.15s; }
+.dash-prazo-item:nth-child(4) { animation-delay: 0.2s; }
+.dash-prazo-item:nth-child(5) { animation-delay: 0.25s; }
+
+/* Top alunos */
+.dash-top {
+  background: white;
+  border-radius: 20px;
+  padding: 22px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(30, 60, 114, 0.06);
+}
+
+.dash-top-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+  transition: all 0.2s;
+}
+
+.dash-top-item:hover {
+  background: #f8fafc;
+}
+
+.dash-top-pos {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.dash-top-item:nth-child(1) .dash-top-pos {
+  background: linear-gradient(135deg, #ffd700, #ffae00);
+  color: #5a4a00;
+}
+.dash-top-item:nth-child(2) .dash-top-pos {
+  background: linear-gradient(135deg, #d1d5db, #9ca3af);
+  color: #1f2937;
+}
+.dash-top-item:nth-child(3) .dash-top-pos {
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+  color: white;
+}
+.dash-top-item:nth-child(n+4) .dash-top-pos {
+  background: #eef3fb;
+  color: #2a5298;
+}
+
+.dash-top-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-top-nome {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e3c72;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-top-meta {
+  font-size: 0.7rem;
+  color: #8895a7;
+}
+
+.dash-top-entregas {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #2a5298;
+  flex-shrink: 0;
+}
+
+/* Skeleton loading */
+.dash-skeleton {
+  background: linear-gradient(90deg, #f0f4fb 25%, #e6eefb 50%, #f0f4fb 75%);
+  background-size: 200% 100%;
+  animation: skeleton 1.5s infinite;
+  border-radius: 12px;
+  height: 100px;
+}
+
+@keyframes skeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .dash-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .dash-card {
+    padding: 16px 14px;
+    border-radius: 16px;
+  }
+
+  .dash-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+  }
+
+  .dash-valor {
+    font-size: 1.5rem;
+  }
+
+  .dash-label {
+    font-size: 0.65rem;
+  }
+
+  .dash-barras {
+    height: 110px;
+  }
+
+  .dash-barra-label {
+    font-size: 0.55rem;
+  }
+
+  .dash-donut {
+    width: 120px;
+    height: 120px;
+  }
+
+  .dash-donut-centro .v {
+    font-size: 1.2rem;
+  }
+}

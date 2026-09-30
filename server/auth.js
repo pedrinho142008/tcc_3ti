@@ -15,7 +15,7 @@ export const verificarSenha = (s, h) => bcrypt.compareSync(s, h);
 
 export function gerarToken(user) {
   return jwt.sign(
-    { id: user.id, email: user.email, tipo: user.tipo, nome: user.nome },
+    { id: user.id, email: user.email, tipo: user.tipo, nome: user.nome, cargo: user.cargo },
     SECRET,
     { expiresIn: TTL }
   );
@@ -39,7 +39,7 @@ export function middlewareAdmin(req, res, next) {
 }
 
 export function middlewareFuncionario(req, res, next) {
-  if (!["admin", "funcionario"].includes(req.user?.tipo))
+  if (!["admin", "funcionario", "professor"].includes(req.user?.tipo))
     return res.status(403).json({ erro: "Acesso restrito" });
   next();
 }

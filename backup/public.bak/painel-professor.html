@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1e3c72" />
+  <title>Portal do Professor — E.E.I.M</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo.png" />
+  <link rel="apple-touch-icon" href="/assets/img/logo.png" />
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/classroom.css" />
+  <link rel="stylesheet" href="/assets/css/painel-novo.css" />
+  <link rel="stylesheet" href="/assets/css/painel-extras.css" />
+</head>
+<body class="painel-body">
+
+  <!-- TOPBAR -->
+  <header class="painel-topbar">
+    <button class="painel-menu-btn" id="btn-hamburger" aria-label="Abrir menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <img src="/assets/img/logo.png" alt="E.E.I.M" class="painel-topbar-logo" />
+
+    <div class="painel-topbar-info">
+      <h1>E.E.I.M — Portal do Professor</h1>
+      <p id="topbar-aba">Minhas turmas</p>
+    </div>
+
+    <div class="painel-topbar-user">
+      <div class="painel-topbar-avatar" id="user-avatar">P</div>
+      <div class="painel-topbar-nome" id="user-nome">—</div>
+    </div>
+  </header>
+
+  <div class="painel-overlay" id="overlay"></div>
+
+  <aside class="painel-sidebar" id="sidebar">
+        <!-- Perfil do usuário na sidebar -->
+    <div class="painel-perfil-sidebar">
+      <div class="painel-perfil-avatar" id="user-avatar-sidebar">P</div>
+      <div class="painel-perfil-info">
+        <div class="painel-perfil-nome" id="user-nome-sidebar">—</div>
+        <div class="painel-perfil-cargo" id="user-cargo-sidebar">—</div>
+      </div>
+    </div>
+
+<div class="painel-sidebar-brand">
+      <img src="/assets/img/logo.png" alt="E.E.I.M" />
+      <div class="painel-sidebar-brand-txt">
+        <h1>E.E.I.M</h1>
+        <p>Portal do Professor</p>
+      </div>
+    </div>
+
+    <nav class="painel-nav">
+      <button class="painel-nav-item ativo" data-aba="turmas">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Minhas turmas</span>
+      </button>
+      <button class="painel-nav-item" data-aba="cadastrar">
+        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        <span>Cadastrar alunos</span>
+      </button>
+      <button class="painel-nav-item" data-aba="postar">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        <span>Postar atividade</span>
+      </button>
+      <button class="painel-nav-item" data-aba="entregas">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+        <span>Entregas dos alunos</span>
+      </button>
+      <button class="painel-nav-item" data-aba="desempenho">
+        <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        <span>Desempenho</span>
+      </button>
+      <button class="painel-nav-item" data-aba="dicas">
+        <svg viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+        <span>Dicas pedagógicas</span>
+      </button>
+    </nav>
+
+    <div class="painel-sidebar-footer">
+      <a href="/" class="painel-footer-btn">
+        <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
+        <span>Ver site</span>
+      </a>
+      <button id="btn-sair" class="painel-footer-btn perigo">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+        <span>Sair</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="painel-main">
+    <div class="painel-titulo-secao">
+      <h2 id="titulo-aba">Minhas turmas</h2>
+      <p id="sub-aba">Acompanhe suas turmas</p>
+    </div>
+    <div id="conteudo-prof"></div>
+  </main>
+
+  <script type="module" src="/assets/js/painel-professor-novo.js?v=1790437522"></script>
+  <script src="/assets/js/menu-delegation.js"></script>
+  <script src="/assets/js/btn-sair-limpo.js"></script>
+</body>
+</html>

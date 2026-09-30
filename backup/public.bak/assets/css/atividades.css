@@ -1,0 +1,54 @@
+/* ===== Módulo de Atividades ===== */
+
+.abas-aluno {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.aba-aluno {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.9);
+  color: #5a6472;
+  font-family: inherit;
+  font-size: 0.83rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.aba-aluno.ativa {
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  color: white;
+}
+
+.preview-arquivo {
+  width: 100%;
+  max-height: 320px;
+  border-radius: 12px;
+  margin-top: 8px;
+  border: 1px solid #e6e9ef;
+  background: #000;
+  display: block;
+}
+
+.preview-arquivo.embed {
+  height: 320px;
+}
+
+.card-nota {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.nota-boa { background: #d1fae5; color: #065f46; }
+.nota-media { background: #fef3c7; color: #92400e; }
+.nota-ruim { background: #fee2e2; color: #991b1b; }
+
+.hidden { display: none !important; }

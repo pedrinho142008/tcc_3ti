@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1e3c72" />
+  <title>Primeiro Acesso — E.E.I.M</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo.png" />
+  <link rel="apple-touch-icon" href="/assets/img/logo.png" />
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/responsivo.css" />
+  <link rel="stylesheet" href="/assets/css/cadastro-aluno.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="/" class="nav-brand">
+        <img src="/assets/img/logo.png" alt="E.E.I.M" class="nav-logo" />
+        <span>E.E.I.M</span>
+        <span class="badge">Ielmo Marinho</span>
+      </a>
+      <button class="menu-btn" type="button" aria-label="Menu">☰</button>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/portal-aluno.html">Login</a>
+      </div>
+    </nav>
+
+    <div class="card login-wrap">
+      <div class="login-head">
+        <div class="cadastro-icon">🔑</div>
+        <h1>Primeiro Acesso</h1>
+        <p>Preencha as informações para validar o cadastro</p>
+      </div>
+
+      <form id="form-cadastro" autocomplete="off">
+        <label>Login
+          <div class="input-com-icone">
+            <span class="icone">👤</span>
+            <input
+              name="login"
+              required
+              inputmode="text"
+              autocomplete="username"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
+              placeholder="Matrícula ou CPF"
+            />
+          </div>
+          <small class="form-hint">
+            <strong>Estudantes:</strong> Matrícula &nbsp;•&nbsp; <strong>Servidores:</strong> CPF
+          </small>
+        </label>
+
+        <label>Data de Nascimento
+          <div class="input-com-icone">
+            <span class="icone">📅</span>
+            <input name="data_nascimento" type="date" required />
+          </div>
+        </label>
+
+        <label>E-mail Institucional
+          <div class="input-com-icone">
+            <span class="icone">📧</span>
+            <input
+              name="email"
+              type="email"
+              required
+              placeholder="nome@escola.rn.gov.br"
+              autocomplete="email"
+            />
+          </div>
+          <small class="form-hint">
+            Você receberá o <strong>token de acesso</strong> neste e-mail
+          </small>
+        </label>
+
+        <button type="submit" id="btn-enviar">
+          <span id="btn-texto">Validar cadastro</span>
+        </button>
+
+        <div id="msg" class="msg-status"></div>
+      </form>
+
+      <div class="cadastro-rodape">
+        Já tem conta? <a href="/portal-aluno.html">Fazer login</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* Máscara automática: CPF (com pontos) ou matrícula (pura) */
+    const inputLogin = document.querySelector('[name="login"]');
+
+    inputLogin?.addEventListener("input", (e) => {
+      let v = e.target.value.replace(/\D/g, "");
+      if (v.length > 15) v = v.slice(0, 15);
+
+      if (v.length <= 11) {
+        if (v.length > 9) v = v.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,2}).*/, "$1.$2.$3-$4");
+        else if (v.length > 6) v = v.replace(/^(\d{3})(\d{3})(\d{0,3}).*/, "$1.$2.$3");
+        else if (v.length > 3) v = v.replace(/^(\d{3})(\d{0,3}).*/, "$1.$2");
+      }
+      e.target.value = v;
+    });
+
+    document.getElementById("form-cadastro").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const msg = document.getElementById("msg");
+      const btn = document.getElementById("btn-enviar");
+      const btnTexto = document.getElementById("btn-texto");
+
+      btn.disabled = true;
+      btnTexto.textContent = "Validando...";
+      msg.className = "msg-status";
+      msg.innerHTML = "";
+
+      try {
+        const r = await fetch("/api/aluno/primeiro-acesso", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            login: fd.get("login"),
+            data_nascimento: fd.get("data_nascimento"),
+            email: fd.get("email"),
+          }),
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.erro || "Erro ao validar");
+
+        msg.className = "msg-status sucesso";
+        msg.innerHTML = `
+          ✅ <strong>${data.mensagem || "Cadastro validado!"}</strong><br>
+          <span style="font-size:0.85rem;line-height:1.5;display:block;margin-top:6px">
+            ${data.instrucao || "Verifique seu e-mail institucional."}
+          </span>
+        `;
+        e.target.reset();
+      } catch (err) {
+        msg.className = "msg-status erro";
+        msg.innerHTML = `❌ ${err.message}`;
+      } finally {
+        btn.disabled = false;
+        btnTexto.textContent = "Validar cadastro";
+      }
+    });
+
+    document.querySelector(".menu-btn")?.addEventListener("click", () => {
+      document.querySelector(".nav-links")?.classList.toggle("open");
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<?xml version="1.0"?>
+<html class="background" xmlns="http://www.w3.org/1999/xhtml"><head><meta name="viewport" content="width=device-width" /><meta http-equiv="X-UA-Compatible" content="IE=EmulateIE8" /><meta http-equiv="Pragma" content="no-cache" /><title>SIGEduc - Sistema Integrado de Gestão da Educação</title><link class="component" href="/sigeduc/a4j/s/3_3_3.Finalorg/richfaces/renderkit/html/css/basic_classes.xcss/DATB/eAF7sqpgb-jyGdIAFrMEaw__.jsf" rel="stylesheet" type="text/css" /><link class="component" href="/sigeduc/a4j/s/3_3_3.Finalorg/richfaces/renderkit/html/css/extended_classes.xcss/DATB/eAF7sqpgb-jyGdIAFrMEaw__.jsf" media="rich-extended-skinning" rel="stylesheet" type="text/css" /><script src="/sigeduc/a4j/g/3_3_3.Finalorg/richfaces/renderkit/html/scripts/skinning.js.jsf" type="text/javascript">
+</script><link rel="shortcut icon" href="/sigeduc/img/sigaa.ico" /><script type="text/javascript" src="/shared/jsBundles/jawr_loader.js">
+</script><script type="text/javascript">//<![CDATA[
+                JAWR.loader.style('/bundles/css/sigaa_base.css', 'all');
+                        JAWR.loader.style('/css/ufrn_print.css', 'print');
+                        JAWR.loader.style('/css/customizacao.css', 'print');
+                        JAWR.loader.script('/bundles/js/sigaa_base.js');
+//]]>
+</script><link rel="stylesheet" type="text/css" media="all" href="/sigeduc/cssBundles/1411914283/bundles/css/sigaa.css" /><link rel="stylesheet" type="text/css" media="all" href="/sigeduc/cssBundles/N301692656/public/css/customizacao.css" /><style type="text/css">/*<![CDATA[*/
+#aviso_na_tela{
+
+         text-align:center;
+         vertical-align:middle;
+         border: 1px solid #ccc;
+         visibility: block;
+         height: 100%;
+         
+         width:994px;
+         
+         position: absolute;
+         left: 50%;
+         margin-left: -497px;
+         
+         background-color: #CCC;
+         opacity:0.5;
+         filter:alpha(opacity=30);
+         display:none;
+         z-index: 999998;
+}
+
+#loading{
+        padding: 4px;
+        background: #FFF;
+        width: 280px;
+        height: 80px;
+        position: absolute;
+        left: 50%;
+        top: 30%;
+        margin-left: -140px;
+        margin-top: -40px;
+        display:none;
+        border: 1px solid #ccc;
+        z-index: 999999;
+
+}
+
+
+#loading_tab{
+                        padding: 4px;
+                        background: #FFF;
+                        width: 280px;
+                        height: 100px;
+                        position: absolute;
+                        left: 50%;
+                        top: 30%;
+                        margin-left: -140px;
+                        margin-top: -40px;
+                        display:none;
+                        border: 1px solid #ccc;
+                        z-index: 999999;
+                
+                }
+                
+table.listagem tbody {
+    background-color: #fafafa00;
+    text-align: left;
+}
+/*]]>*/
+</style><script type="text/javascript">//<![CDATA[
+                        var mensagem;
+                        var initMensagem = function() {
+                                mensagem = new Mensagem();
+                        }
+                        YAHOO.util.Event.addListener(window,'load', initMensagem);
+                        
+                        function show_carregando(){
+                if (document.getElementById("container") !== null){
+                    document.getElementById("linkTopo").click();
+                                        document.getElementById("aviso_na_tela").style.display='block';
+                                        document.getElementById("aviso_na_tela").style.height= document.getElementById("container").clientHeight + 'px';
+                                        document.getElementById("loading").style.display='block';
+                                }
+                        }
+                        
+                        
+                        function hidde_carregando(){    
+                                document.getElementById("aviso_na_tela").style.display='none';
+                                document.getElementById("loading").style.display='none';
+                        
+                        }
+                        
+                        function carregarTimeout() {
+                                var xhttp = new XMLHttpRequest();
+                                xhttp.open("GET", "/sigeduc/sistemaTimeout", true);
+                                xhttp.send();
+                        }
+
+                        window.addEventListener('load', () => {
+                                // Seleciona todos os elementos <a> dentro de <li> que estão dentro da div com id 'menu-principal'
+                                let linksMenu = retornaLinksMenu();
+
+                                function addClickEventLinkMenu(linksMenu) {
+                                        // Itera sobre cada um dos links e adiciona o evento de clique
+                                        linksMenu.forEach( (link) => {
+                                                link.addEventListener("click", (event) => {
+                                                        // Desabilita o link ao ser clicado
+                                                        event.preventDefault();
+                                                        disableLink(link);
+
+                                                        // Reativa o link após a navegação/saída da página
+                                                        window.addEventListener('beforeunload', () => {
+                                                                link.disabled = false;
+                                                        });
+
+                                                        window.location.href = link.href;
+                                                });
+                                        });
+                                }
+
+                                addClickEventLinkMenu(linksMenu);
+
+                                let observer = new MutationObserver((mutationsList) => {
+                                        linksMenu = retornaLinksMenu();
+                                        for (var mutation of mutationsList) {
+                                                if (mutation.type === 'childList') {
+                                                        addClickEventLinkMenu(linksMenu); // Aplica os eventos de click nos novos elementos
+                                                }
+                                        }
+                                });
+
+                                observer.observe(document.body, { childList: true, subtree: true });
+
+                                function disableLink(linkElement) {
+                                        linkElement.style.pointerEvents = "none"; // Desabilita os cliques no link
+                                        linkElement.style.opacity = "0.5"; // Opcional: muda a aparência para indicar que está desabilitado
+                                }
+
+                                function retornaLinksMenu() {
+                                        return document.querySelectorAll("#menu_principal li a");
+                                }
+                        })
+                        
+                //]]>
+</script><!-- Fim dos imports para abrir chamado -->
+</head><body><div id="loading_tab" style="text-align: center;"><h3>Está funcionalidade já está aberta em outra aba, finalize seus trabalhos para poder acessar novamente.</h3><br /> <img id="img_carregando" src="/sigeduc/img/loader.gif" /></div><!-- ESSE BLOCO FICA ESCONDIDO, SÓ APARECE QUANDO SE CHAMA A FUNC JavaScript 'show_carregando()'-->
+<div id="aviso_na_tela"></div><div id="aviso_na_tela"></div><div id="loading"><h3>Aguarde, estamos processando as informações...</h3><br /> <img id="img_carregando" src="/sigeduc/img/loader.gif" /></div><div id="container"><div id="cabecalho" style="display: block;"><div id="info-sistema"><h1><span>SEEC - SIGEduc -</span></h1><h3>Sistema Integrado de Gestão da Educação</h3><div id="tempoSessao"></div> <span class="sair-sistema"><a href="/sigeduc/logar.do?dispatch=logOff">SAIR</a></span></div><div id="painel-usuario"><div id="menu-usuario"><ul><li class="modulos"><span id="modulos"><a href="#" id="show-modulos">Módulos</a></span></li><li class="chamado"><a href="javascript://nop/" onclick="alert('Caro Estudante, em caso de dúvidas em relação ao uso do SIGEduc, recorra à secretaria de sua escola.\nEm caso de erro, envie uma mensagem para sigeduc@rn.gov.br (não esquecendo de informar seu número de matrícula).');">Abrir Chamado</a></li><li class="menus"><a href="/sigeduc/verPortalDiscente.do">Menu Estudante</a></li><li class="dados-pessoais"><a href="#" onclick="window.open('/sigeduc/public/usuario/alterar_dados.jsf','','width=670,height=345, top=100, left=100, scrollbars' )">Alterar senha</a></li><li class="ajuda"><a href="http://sigeduc.rn.gov.br/ajuda/" target="_blank">Ajuda</a></li></ul></div><div id="info-usuario"><p class="periodo-atual" align="center">Calendário Escolar<br /> <b>2026</b></p><p class="usuario"><span title="PEDRO VICTOR SILVA DOS SANTOS">PEDRO VICTOR S. DOS SANTOS</span> <i><small><a href="/sigeduc/escolhaVinculo.do?dispatch=listar">Alterar vínculo</a></small></i></p><p class="unidade">ESCOLA ESTADUAL IELMO MARINHO</p></div><div id="menu-principal"></div></div></div><a href="#conteudo" id="linkTopo"></a> <div id="conteudo"><script src="/sigeduc/javascript/encoding.js" type="text/javascript">
+</script> <script type="text/javascript">//<![CDATA[
+
+
+        function fecharPainelErros() {
+                var iterator = document.evaluate("//div[@id='painel-erros']", document,null, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null);
+                var thisNode = iterator.iterateNext();
+
+                while (thisNode) {
+                        thisNode.style.display = 'none';
+                        thisNode = iterator.iterateNext();
+                }
+        }
+//]]>
+</script> <style type="text/css">/*<![CDATA[*/
+
+.orientacoes{
+z-index: 999999;
+border: 1px solid gray;
+
+}
+/*]]>*/
+</style> <!-- INTEGRAÇÃO CONPASS -->
+ <script type="text/javascript" src="https://fast.conpass.io/KwfWXeqbSTujX.js">
+</script> <script type="text/javascript">//<![CDATA[
+if (window.Conpass) {
+                Conpass.debug();
+            window.Conpass.init({
+              name: "PEDRO VICTOR SILVA DOS SANTOS",
+              email: "soypedro148@gmail.com",
+                  custom_fields: {
+                      usuario_logado_id: "61928452",
+                      vinculo_discente: "true",
+                          vinculo_servidor: "false",
+                      vinculo_familiar: "false",
+                      projeto: "SIGEDUC-SEEC",
+                  }
+         });
+        }
+//]]>
+</script> <script type="text/javascript" src="/sigeduc/javascript/correcoes_componentes/correcao_input_calendar_tomahawk.js">
+</script> <script type="text/javascript" src="/sigeduc/javascript/correcoes_componentes/correcao_ajax_richfaces_3_3_3_final.js">
+</script> <link rel="stylesheet" type="text/css" media="all" href="/sigeduc/cssBundles/1640272741/css/portal_docente.css" /> <script type="text/javascript">//<![CDATA[
+        JAWR.loader.script('/javascript/paineis/noticias.js');
+//]]>
+</script> <script src="/sigeduc/javascript/jquery.jshowoff.min.js" type="text/javascript">
+</script> <script type="text/javascript" src="/shared/javascript/jquery/jquery-1.4.4.min.js">
+</script> <script src="/sigeduc/javascript/rotator.js" type="text/javascript">
+</script> <style type="text/css">/*<![CDATA[*/
+#cboxLoadedContent iframe {
+        background-color:#FFFFFF;
+}
+.jshowoff-slidelinks {
+        display: none;
+}
+.jshowoff-controls {
+        text-align: right;
+}
+/*]]>*/
+</style> <meta name="Ajax-Update-Ids" content="" /><span id="ajax-view-state"><input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="j_id1" /></span><meta id="Ajax-Response" name="Ajax-Response" content="true" /><meta name="Ajax-Update-Ids" content="" /><span id="ajax-view-state"><input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="j_id1" /></span><meta id="Ajax-Response" name="Ajax-Response" content="true" /> <style type="text/css">/*<![CDATA[*/
+        #avaliacao-portal th, #avaliacao-portal td{
+                text-align:left;
+        }
+/*]]>*/
+</style> <script type="text/javascript">//<![CDATA[
+        PainelNoticias.init('/sigeduc/geral/noticia/viewNoticia.jsf');
+        var J = jQuery.noConflict();
+        J(document).ready(function() {
+
+                function getElementByXpath(path) {
+                          return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                }
+                
+                getElementByXpath("//td[@class='ThemeOfficeMenuItemText'][contains(text(), 'Boletim')]/..").addEventListener("click", function(){
+                    show_carregando();
+                }, false);
+        });
+        
+        
+//]]>
+</script> <div class="clear"></div></div><br /> <div class="responsiva-display_none" style="width: 80%; text-align: center; margin: 0 auto;"><a href='/sigeduc/verPortalDiscente.do'>Portal do Estudante</a></div><div id="rodape"><p>SIGEduc | GPD/SEEC - <font color="white" font-weight="ligther">(84) 4008-4088 / Opção 1</font> -sigeduc-app1.srv1inst1 - v20260925_1730 <a href="http://www.esig.com.br" target="_blank"><img src="/sigeduc/img/logo_sig.png" width="25px" align="right" /></a></p></div></div><div id="painel-mensagem-envio"></div><script type="text/javascript" language="javascript">//<![CDATA[
+        Relogio.init(
+30
+        );
+//]]>
+</script><!-- MYFACES JAVASCRIPT -->
+
+</body></html>

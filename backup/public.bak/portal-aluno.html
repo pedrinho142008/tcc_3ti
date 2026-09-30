@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1e3c72" />
+  <title>Portal do Estudante — E.E.I.M</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo.png" />
+  <link rel="apple-touch-icon" href="/assets/img/logo.png" />
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/responsivo.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="/" class="nav-brand">
+        <img src="/assets/img/logo.png" alt="E.E.I.M" class="nav-logo" />
+        <span>E.E.I.M</span>
+        <span class="badge">Ielmo Marinho</span>
+      </a>
+      <button class="menu-btn" type="button" aria-label="Menu">☰</button>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/eventos.html">Eventos</a>
+        <a href="/merenda.html">Merenda</a>
+        <a href="/contato.html">Contato</a>
+        <a href="/login.html">Login</a>
+      </div>
+    </nav>
+
+    <div class="card login-wrap">
+      <div class="login-head">
+        <h1>🎓 Portal do Estudante</h1>
+        <p>Acesse com sua matrícula e senha do SigEduc</p>
+      </div>
+
+      <form id="form-aluno">
+        <label>Matrícula
+          <input
+            type="text"
+            id="matricula"
+            required
+            inputmode="numeric"
+            pattern="[0-9]*"
+            autocomplete="username"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+          <small class="form-hint">
+            Só números. Ex: <strong>202430395866</strong>
+          </small>
+        </label>
+
+        <label>Senha
+          <input
+            type="password"
+            id="senha"
+            required
+            autocomplete="current-password"
+          />
+          <small class="form-hint">
+            A mesma senha usada no SigEduc
+          </small>
+        </label>
+
+        <button type="submit" id="btn-entrar">Entrar</button>
+        <p id="erro" class="erro-msg"></p>
+      </form>
+
+      <p style="text-align:center;margin-top:22px;font-size:0.83rem;color:#8895a7">
+        É funcionário? <a href="/login.html" style="color:#2a5298;font-weight:700">Acesse aqui</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    document.querySelector(".menu-btn")?.addEventListener("click", () => {
+      document.querySelector(".nav-links")?.classList.toggle("open");
+    });
+
+    // Aceita só números no campo de matrícula
+    document.getElementById("matricula")?.addEventListener("input", (e) => {
+      e.target.value = e.target.value.replace(/\D/g, "");
+    });
+
+    document.getElementById("form-aluno").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const matricula = document.getElementById("matricula").value.trim();
+      const senha = document.getElementById("senha").value;
+      const erro = document.getElementById("erro");
+      const btn = document.getElementById("btn-entrar");
+
+      if (!matricula) {
+        erro.textContent = "Digite sua matrícula";
+        erro.style.color = "#e53e3e";
+        return;
+      }
+
+      if (!/^\d{6,}$/.test(matricula)) {
+        erro.textContent = "A matrícula deve ter pelo menos 6 números";
+        erro.style.color = "#e53e3e";
+        return;
+      }
+
+      erro.textContent = "";
+      btn.disabled = true;
+      btn.textContent = "Entrando...";
+      erro.textContent = "⏳ Autenticando no SigEduc... (pode levar 20-40s)";
+      erro.style.color = "#2a5298";
+
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 90000);
+
+        const r = await fetch("/api/aluno/login", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ matricula, senha }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.erro || "Erro ao entrar");
+
+        localStorage.setItem("aluno", JSON.stringify(data));
+        window.location.href = "/painel-aluno.html";
+      } catch (err) {
+        if (err.name === "AbortError") {
+          erro.textContent = "⏱️ O SigEduc demorou demais para responder. Tente novamente.";
+        } else {
+          erro.textContent = err.message;
+        }
+        erro.style.color = "#e53e3e";
+        btn.disabled = false;
+        btn.textContent = "Entrar";
+      }
+    });
+  </script>
+  <script src="/assets/js/menu.js"></script>
+</body>
+</html>

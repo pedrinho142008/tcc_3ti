@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1e3c72" />
+  <title>Painel Administrativo — E.E.I.M</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo.png" />
+  <link rel="apple-touch-icon" href="/assets/img/logo.png" />
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/classroom.css" />
+  <link rel="stylesheet" href="/assets/css/painel-novo.css" />
+  <link rel="stylesheet" href="/assets/css/painel-extras.css" />
+</head>
+<body class="painel-body">
+
+  <!-- TOPBAR -->
+  <header class="painel-topbar">
+    <button class="painel-menu-btn" id="btn-hamburger" aria-label="Abrir menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <img src="/assets/img/logo.png" alt="E.E.I.M" class="painel-topbar-logo" />
+
+    <div class="painel-topbar-info">
+      <h1>E.E.I.M — Painel Admin</h1>
+      <p id="topbar-aba">Postagens</p>
+    </div>
+
+    <div class="painel-topbar-user">
+      <div class="painel-topbar-avatar" id="user-avatar">A</div>
+      <div class="painel-topbar-nome" id="user-nome">—</div>
+    </div>
+  </header>
+
+  <div class="painel-overlay" id="overlay"></div>
+
+  <aside class="painel-sidebar" id="sidebar">
+    <!-- Perfil do usuário na sidebar (igual aluno/professor) -->
+    <div class="painel-perfil-sidebar">
+      <div class="painel-perfil-avatar" id="user-avatar-sidebar">A</div>
+      <div class="painel-perfil-info">
+        <div class="painel-perfil-nome" id="user-nome-sidebar">—</div>
+        <div class="painel-perfil-cargo" id="user-cargo-sidebar">—</div>
+      </div>
+    </div>
+
+    <div class="painel-sidebar-brand">
+      <img src="/assets/img/logo.png" alt="E.E.I.M" />
+      <div class="painel-sidebar-brand-txt">
+        <h1>E.E.I.M</h1>
+        <p>Painel Administrativo</p>
+      </div>
+    </div>
+
+    <nav class="painel-nav">
+      <button class="painel-nav-item ativo" data-aba="posts">
+        <svg viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+        <span>Postagens</span>
+      </button>
+      <button class="painel-nav-item" data-aba="avisos">
+        <svg viewBox="0 0 24 24"><path d="M3 11v2a1 1 0 0 0 1 1h2l4 5h2V4H8L4 9H3z"/><path d="M16 8a5 5 0 0 1 0 8"/></svg>
+        <span>Avisos</span>
+      </button>
+      <button class="painel-nav-item" data-aba="mural-segmentado">
+        <span class="admin-nav-icon">📢</span>
+        <span>Mural Segmentado</span>
+      </button>
+      <button class="painel-nav-item" data-aba="manutencao">
+        <span class="admin-nav-icon">🔧</span>
+        <span>Manutenção</span>
+      </button>
+      <button class="painel-nav-item" data-aba="documentos">
+        <span class="admin-nav-icon">📄</span>
+        <span>Documentos</span>
+      </button>
+      <button class="painel-nav-item" data-aba="eventos">
+        <svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+        <span>Eventos</span>
+      </button>
+      <button class="painel-nav-item" data-aba="merenda">
+        <svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+        <span>Merenda</span>
+      </button>
+      <button class="painel-nav-item" data-aba="turmas">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Turmas</span>
+      </button>
+      <button class="painel-nav-item" data-aba="usuarios">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+        <span>Usuários</span>
+      </button>
+      <button class="painel-nav-item" data-aba="pedidos">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+        <span>Pedidos de cadastro</span>
+      </button>
+      <button class="painel-nav-item" data-aba="codigos">
+        <svg viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+        <span>Códigos de vínculo</span>
+      </button>
+      <button class="painel-nav-item" data-aba="mural">
+        <svg viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+        <span>Mural de Honra</span>
+      </button>
+      <button class="painel-nav-item" data-aba="certificados">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+        <span>Certificados</span>
+      </button>
+    </nav>
+
+    <div class="painel-sidebar-footer">
+      <a href="/" target="_blank" class="painel-footer-btn">
+        <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
+        <span>Ver site público</span>
+      </a>
+      <button id="btn-sair" class="painel-footer-btn perigo">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+        <span>Sair</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="painel-main">
+    <div class="painel-titulo-secao">
+      <h2 id="admin-titulo">Postagens</h2>
+      <p id="admin-sub">Gerencie as publicações do site</p>
+    </div>
+    <div id="admin-conteudo"></div>
+  </main>
+
+  <script type="module" src="/assets/js/painel-admin.js?v=1790592883"></script>
+  <script src="/assets/js/menu-delegation.js"></script>
+  <script src="/assets/js/btn-sair-limpo.js"></script>
+</body>
+</html>

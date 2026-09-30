@@ -2,977 +2,133 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1e3c72" />
   <title>Painel Administrativo — E.E.I.M</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo.png" />
+  <link rel="apple-touch-icon" href="/assets/img/logo.png" />
   <link rel="stylesheet" href="/assets/css/style.css" />
   <link rel="stylesheet" href="/assets/css/admin.css" />
   <link rel="stylesheet" href="/assets/css/classroom.css" />
-  <link rel="stylesheet" href="/assets/css/responsivo.css" />
+  <link rel="stylesheet" href="/assets/css/painel-novo.css" />
+  <link rel="stylesheet" href="/assets/css/painel-extras.css" />
 </head>
-<body class="admin-body">
-  <div class="admin-wrap">
-    <aside class="admin-sidebar">
-      <div class="admin-brand">
-        <div class="admin-brand-icon">E</div>
-        <div>
-          <div class="admin-brand-title">E.E.I.M</div>
-          <div class="admin-brand-sub">Painel Administrativo</div>
-        </div>
+<body class="painel-body">
+
+  <!-- TOPBAR -->
+  <header class="painel-topbar">
+    <button class="painel-menu-btn" id="btn-hamburger" aria-label="Abrir menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <img src="/assets/img/logo.png" alt="E.E.I.M" class="painel-topbar-logo" />
+
+    <div class="painel-topbar-info">
+      <h1>E.E.I.M — Painel Admin</h1>
+      <p id="topbar-aba">Postagens</p>
+    </div>
+
+    <div class="painel-topbar-user">
+      <div class="painel-topbar-avatar" id="user-avatar">A</div>
+      <div class="painel-topbar-nome" id="user-nome">—</div>
+    </div>
+  </header>
+
+  <div class="painel-overlay" id="overlay"></div>
+
+  <aside class="painel-sidebar" id="sidebar">
+    <!-- Perfil do usuário na sidebar (igual aluno/professor) -->
+    <div class="painel-perfil-sidebar">
+      <div class="painel-perfil-avatar" id="user-avatar-sidebar">A</div>
+      <div class="painel-perfil-info">
+        <div class="painel-perfil-nome" id="user-nome-sidebar">—</div>
+        <div class="painel-perfil-cargo" id="user-cargo-sidebar">—</div>
       </div>
+    </div>
 
-      <nav class="admin-nav">
-        <button class="admin-nav-item active" data-aba="posts">
-          <span class="admin-nav-icon">▤</span>
-          <span>Postagens</span>
-        </button>
-        <button class="admin-nav-item" data-aba="avisos">
-          <span class="admin-nav-icon">◈</span>
-          <span>Avisos</span>
-        </button>
-        <button class="admin-nav-item" data-aba="eventos">
-          <span class="admin-nav-icon">▦</span>
-          <span>Eventos</span>
-        </button>
-        <button class="admin-nav-item" data-aba="merenda">
-          <span class="admin-nav-icon">◐</span>
-          <span>Merenda</span>
-        </button>
-        <button class="admin-nav-item" data-aba="usuarios">
-          <span class="admin-nav-icon">◇</span>
-          <span>Usuários</span>
-        </button>
-        <button class="admin-nav-item" data-aba="pedidos">
-          <span class="admin-nav-icon">◉</span>
-          <span>Pedidos de cadastro</span>
-        </button>
-        <button class="admin-nav-item" data-aba="evasao">
-          <span class="admin-nav-icon">⚠️</span>
-          <span>Análise preditiva</span>
-        </button>
-        <button class="admin-nav-item" data-aba="codigos">
-          <span class="admin-nav-icon">🔑</span>
-          <span>Códigos de vínculo</span>
-        </button>
-        <button class="admin-nav-item" data-aba="mural">
-          <span class="admin-nav-icon">🏛️</span>
-          <span>Mural de Honra</span>
-        </button>
-        <button class="admin-nav-item" data-aba="certificados">
-          <span class="admin-nav-icon">🎖️</span>
-          <span>Certificados</span>
-        </button>
-      </nav>
-
-      <div class="admin-sidebar-footer">
-        <a href="/" target="_blank" class="admin-link-sec">Ver site público</a>
-        <button id="btn-sair" class="admin-link-sec admin-link-danger">Sair</button>
+    <div class="painel-sidebar-brand">
+      <img src="/assets/img/logo.png" alt="E.E.I.M" />
+      <div class="painel-sidebar-brand-txt">
+        <h1>E.E.I.M</h1>
+        <p>Painel Administrativo</p>
       </div>
-    </aside>
-
-    <main class="admin-main">
-      <header class="admin-header">
-        <div>
-          <h1 class="admin-title" id="admin-titulo">Postagens</h1>
-          <p class="admin-subtitle" id="admin-sub">Gerencie as publicações do site</p>
-        </div>
-        <div class="admin-user">
-          <div class="admin-user-avatar" id="user-avatar">A</div>
-          <div>
-            <div class="admin-user-name" id="user-nome">—</div>
-            <div class="admin-user-role" id="user-cargo">—</div>
-          </div>
-        </div>
-      </header>
-
-      <div id="admin-conteudo"></div>
-    </main>
-  </div>
-
-  <script type="module">
-    import { api, esc, fmtData, fmtCurta, mostrarLoading, esconderLoading, periodoNome } from "/assets/js/shared.js";
-
-    /* ============================================================
-       USUÁRIO LOGADO
-       ============================================================ */
-    let user = null;
-    try {
-      user = await api("/api/users/me");
-    } catch {
-      window.location.href = "/login.html";
-    }
-
-    document.getElementById("user-nome").textContent = user?.nome || "—";
-    document.getElementById("user-cargo").textContent = user?.cargo || user?.tipo || "—";
-    document.getElementById("user-avatar").textContent = (user?.nome || "A").charAt(0).toUpperCase();
-
-    document.getElementById("btn-sair").addEventListener("click", async () => {
-      await api("/api/users/logout", { method: "POST" }).catch(() => {});
-      window.location.href = "/";
-    });
-
-    /* ============================================================
-       TÍTULOS DAS ABAS
-       ============================================================ */
-    const titulos = {
-      posts:        ["Postagens",             "Gerencie as publicações do site"],
-      avisos:       ["Avisos",                "Comunicados rápidos pra toda a comunidade"],
-      eventos:      ["Eventos",               "Agenda escolar"],
-      merenda:      ["Merenda",               "Cardápio diário"],
-      usuarios:     ["Usuários",              "Funcionários e administradores"],
-      pedidos:      ["Pedidos de cadastro",   "Aprove ou rejeite novos cadastros"],
-      evasao:       ["Análise preditiva",     "Identifique alunos em risco de evasão"],
-      codigos:      ["Códigos de vínculo",    "Gere códigos para pais vincularem filhos"],
-      mural:        ["Mural de Honra",        "Destaques do mês"],
-      certificados: ["Certificados",          "Emita certificados para alunos"],
-    };
-
-    document.querySelectorAll(".admin-nav-item").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".admin-nav-item").forEach((x) => x.classList.remove("active"));
-        btn.classList.add("active");
-        const aba = btn.dataset.aba;
-        document.getElementById("admin-titulo").textContent = titulos[aba][0];
-        document.getElementById("admin-sub").textContent = titulos[aba][1];
-        carregar(aba);
-      });
-    });
-
-    /* ============================================================
-       ROUTER
-       ============================================================ */
-    async function carregar(aba) {
-      const el = document.getElementById("admin-conteudo");
-      mostrarLoading("Carregando...");
-      try {
-        let html = "";
-        if (aba === "posts")        html = await renderPosts();
-        if (aba === "avisos")       html = await renderAvisos();
-        if (aba === "eventos")      html = await renderEventos();
-        if (aba === "merenda")      html = await renderMerenda();
-        if (aba === "usuarios")     html = await renderUsuarios();
-        if (aba === "pedidos")      html = await renderPedidos();
-        if (aba === "evasao")       html = await renderEvasaoAdmin();
-        if (aba === "codigos")      html = await renderCodigos();
-        if (aba === "mural")        html = await renderMuralAdmin();
-        if (aba === "certificados") html = await renderCertificados();
-
-        el.innerHTML = html;
-        bind(aba);
-      } catch (e) {
-        console.error(e);
-        el.innerHTML = `<div class="admin-section"><p style="color:#c53030">Erro: ${esc(e.message)}</p></div>`;
-      } finally {
-        esconderLoading();
-      }
-    }
-
-    /* ============================================================
-       POSTS
-       ============================================================ */
-    function formImagem(idCampo) {
-      return `
-        <label>Imagem
-          <div class="admin-upload-area" id="upload-area-${idCampo}">
-            <div id="upload-content-${idCampo}">
-              <div class="admin-upload-icon">▣</div>
-              <div class="admin-upload-text">Clique pra escolher uma foto</div>
-              <div class="admin-upload-hint">JPG, PNG ou WEBP — até 5 MB</div>
-            </div>
-          </div>
-          <input type="file" id="file-${idCampo}" accept="image/*" style="display:none" />
-        </label>
-        <div class="admin-upload-or">ou</div>
-        <label>URL da imagem
-          <input type="text" id="url-${idCampo}" placeholder="https://exemplo.com/foto.jpg" />
-        </label>
-      `;
-    }
-
-    function bindImagem(idCampo) {
-      const area = document.getElementById(`upload-area-${idCampo}`);
-      const file = document.getElementById(`file-${idCampo}`);
-      const url = document.getElementById(`url-${idCampo}`);
-      const content = document.getElementById(`upload-content-${idCampo}`);
-      if (!area) return;
-
-      area.addEventListener("click", () => file.click());
-      file.addEventListener("change", async () => {
-        const f = file.files[0];
-        if (!f) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          area.classList.add("has-image");
-          content.innerHTML = `<img class="admin-upload-preview" src="${e.target.result}" />`;
-        };
-        reader.readAsDataURL(f);
-
-        mostrarLoading("Enviando imagem...");
-        try {
-          const fd = new FormData();
-          fd.append("arquivo", f);
-          const r = await fetch("/api/upload", { method: "POST", credentials: "include", body: fd });
-          const data = await r.json();
-          if (!r.ok) throw new Error(data.erro);
-          url.value = data.url;
-        } catch (err) {
-          alert("Erro: " + err.message);
-        } finally {
-          esconderLoading();
-        }
-      });
-
-      url.addEventListener("input", () => {
-        const v = url.value.trim();
-        if (v && /^https?:\/\//.test(v)) {
-          area.classList.add("has-image");
-          content.innerHTML = `<img class="admin-upload-preview" src="${esc(v)}" onerror="this.style.display='none'" />`;
-        }
-      });
-    }
-
-    async function renderPosts() {
-      const posts = await api("/api/posts").catch(() => []);
-      return `
-        <div class="admin-section">
-          <div class="admin-section-title">➕ Nova postagem</div>
-          <form id="f-post" class="admin-form">
-            <label>Título<input name="titulo" required placeholder="Ex: Semana da leitura" /></label>
-            <label>Texto<textarea name="texto" required></textarea></label>
-            ${formImagem("post")}
-            <label>Categoria
-              <select name="categoria">
-                <option value="noticia">Notícia</option>
-                <option value="evento">Evento</option>
-                <option value="aviso">Aviso</option>
-                <option value="conquista">Conquista</option>
-              </select>
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;text-transform:none">
-              <input type="checkbox" name="fixada" style="width:auto" /> Fixar no topo
-            </label>
-            <button type="submit" class="admin-btn">Publicar postagem</button>
-          </form>
-        </div>
-
-        <div class="admin-section">
-          <div class="admin-section-title">Postagens (${posts.length})</div>
-          ${posts.length ? `<div class="admin-list">${posts.map((p) => `
-            <div class="admin-item">
-              <div class="admin-item-content">
-                <div class="admin-item-title">${esc(p.titulo)}</div>
-                <div class="admin-item-meta">
-                  <span class="admin-badge ${p.categoria}">${p.categoria}</span> ${fmtData(p.criado_em)}
-                </div>
-                <div class="admin-item-text">${esc(p.texto)}</div>
-              </div>
-              <div class="admin-item-actions">
-                <button class="admin-btn admin-btn-danger admin-btn-sm del-post" data-id="${p.id}">Excluir</button>
-              </div>
-            </div>`).join("")}</div>` : `<div class="admin-empty"><div class="admin-empty-icon">▤</div>Nenhuma postagem</div>`}
-        </div>
-      `;
-    }
-
-    function bindPosts() {
-      bindImagem("post");
-      document.getElementById("f-post")?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-        mostrarLoading("Publicando...");
-        try {
-          await api("/api/posts", {
-            method: "POST",
-            body: JSON.stringify({
-              titulo: fd.get("titulo"),
-              texto: fd.get("texto"),
-              imagem_url: document.getElementById("url-post").value || null,
-              categoria: fd.get("categoria"),
-              fixada: fd.get("fixada") === "on",
-            }),
-          });
-          carregar("posts");
-        } catch (err) { alert("Erro: " + err.message); esconderLoading(); }
-      });
-      document.querySelectorAll(".del-post").forEach((b) => {
-        b.addEventListener("click", async () => {
-          if (!confirm("Excluir?")) return;
-          mostrarLoading();
-          await api("/api/posts/" + b.dataset.id, { method: "DELETE" });
-          carregar("posts");
-        });
-      });
-    }
-
-    /* ============================================================
-       AVISOS
-       ============================================================ */
-    async function renderAvisos() {
-      const avisos = await api("/api/announcements").catch(() => []);
-      return `
-        <div class="admin-section">
-          <div class="admin-section-title">➕ Novo aviso</div>
-          <form id="f-aviso" class="admin-form">
-            <label>Texto<textarea name="texto" required></textarea></label>
-            <label style="display:flex;align-items:center;gap:8px;text-transform:none">
-              <input type="checkbox" name="urgente" style="width:auto" /> Urgente
-            </label>
-            <button type="submit" class="admin-btn">Publicar aviso</button>
-          </form>
-        </div>
-
-        <div class="admin-section">
-          <div class="admin-section-title">Avisos (${avisos.length})</div>
-          ${avisos.length ? `<div class="admin-list">${avisos.map((a) => `
-            <div class="admin-item">
-              <div class="admin-item-content">
-                <div class="admin-item-meta">
-                  <span class="admin-badge ${a.urgente ? "urgente" : ""}">${a.urgente ? "Urgente" : "Normal"}</span>
-                </div>
-                <div class="admin-item-text">${esc(a.texto)}</div>
-              </div>
-              <div class="admin-item-actions">
-                <button class="admin-btn admin-btn-danger admin-btn-sm del-aviso" data-id="${a.id}">Excluir</button>
-              </div>
-            </div>`).join("")}</div>` : `<div class="admin-empty"><div class="admin-empty-icon">◈</div>Nenhum aviso</div>`}
-        </div>
-      `;
-    }
-
-    function bindAvisos() {
-      document.getElementById("f-aviso")?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-        mostrarLoading();
-        try {
-          await api("/api/announcements", {
-            method: "POST",
-            body: JSON.stringify({ texto: fd.get("texto"), urgente: fd.get("urgente") === "on" }),
-          });
-          carregar("avisos");
-        } catch (err) { alert("Erro: " + err.message); esconderLoading(); }
-      });
-      document.querySelectorAll(".del-aviso").forEach((b) => {
-        b.addEventListener("click", async () => {
-          if (!confirm("Excluir?")) return;
-          mostrarLoading();
-          await api("/api/announcements/" + b.dataset.id, { method: "DELETE" });
-          carregar("avisos");
-        });
-      });
-    }
-
-    /* ============================================================
-       EVENTOS
-       ============================================================ */
-    async function renderEventos() {
-      const evs = await api("/api/events").catch(() => []);
-      return `
-        <div class="admin-section">
-          <div class="admin-section-title">➕ Novo evento</div>
-          <form id="f-evento" class="admin-form">
-            <label>Título<input name="titulo" required /></label>
-            <label>Descrição<textarea name="descricao"></textarea></label>
-            <label>Local<input name="local" /></label>
-            <label>Início<input type="datetime-local" name="data_inicio" required /></label>
-            <label>Fim<input type="datetime-local" name="data_fim" /></label>
-            ${formImagem("evento")}
-            <button type="submit" class="admin-btn">Criar evento</button>
-          </form>
-        </div>
-
-        <div class="admin-section">
-          <div class="admin-section-title">Eventos (${evs.length})</div>
-          ${evs.length ? `<div class="admin-list">${evs.map((e) => `
-            <div class="admin-item">
-              <div class="admin-item-content">
-                <div class="admin-item-title">${esc(e.titulo)}</div>
-                <div class="admin-item-meta">${fmtData(e.data_inicio)}${e.local ? " — " + esc(e.local) : ""}</div>
-                ${e.descricao ? `<div class="admin-item-text">${esc(e.descricao)}</div>` : ""}
-              </div>
-              <div class="admin-item-actions">
-                <button class="admin-btn admin-btn-danger admin-btn-sm del-evento" data-id="${e.id}">Excluir</button>
-              </div>
-            </div>`).join("")}</div>` : `<div class="admin-empty"><div class="admin-empty-icon">▦</div>Nenhum evento</div>`}
-        </div>
-      `;
-    }
-
-    function bindEventos() {
-      bindImagem("evento");
-      document.getElementById("f-evento")?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-        mostrarLoading();
-        try {
-          await api("/api/events", {
-            method: "POST",
-            body: JSON.stringify({
-              titulo: fd.get("titulo"),
-              descricao: fd.get("descricao"),
-              local: fd.get("local"),
-              data_inicio: new Date(fd.get("data_inicio")).toISOString(),
-              data_fim: fd.get("data_fim") ? new Date(fd.get("data_fim")).toISOString() : null,
-              imagem_url: document.getElementById("url-evento").value || null,
-            }),
-          });
-          carregar("eventos");
-        } catch (err) { alert("Erro: " + err.message); esconderLoading(); }
-      });
-      document.querySelectorAll(".del-evento").forEach((b) => {
-        b.addEventListener("click", async () => {
-          if (!confirm("Excluir?")) return;
-          mostrarLoading();
-          await api("/api/events/" + b.dataset.id, { method: "DELETE" });
-          carregar("eventos");
-        });
-      });
-    }
-
-    /* ============================================================
-       MERENDA
-       ============================================================ */
-    async function renderMerenda() {
-      const ms = await api("/api/meals").catch(() => []);
-      return `
-        <div class="admin-section">
-          <div class="admin-section-title">➕ Cadastrar merenda</div>
-          <form id="f-merenda" class="admin-form">
-            <label>Data<input type="date" name="data" required /></label>
-            <label>Período
-              <select name="periodo" required>
-                <option value="manha">Manhã</option>
-                <option value="almoco">Almoço</option>
-                <option value="tarde">Tarde</option>
-                <option value="noite">Noite</option>
-              </select>
-            </label>
-            <label>Descrição<textarea name="descricao" required></textarea></label>
-            <button type="submit" class="admin-btn">Salvar merenda</button>
-          </form>
-        </div>
-
-        <div class="admin-section">
-          <div class="admin-section-title">Merenda cadastrada (${ms.length})</div>
-          ${ms.length ? `<div class="admin-list">${ms.map((m) => `
-            <div class="admin-item">
-              <div class="admin-item-content">
-                <div class="admin-item-title">${esc(m.descricao)}</div>
-                <div class="admin-item-meta">${fmtData(m.data)} — ${periodoNome(m.periodo)}</div>
-              </div>
-              <div class="admin-item-actions">
-                <button class="admin-btn admin-btn-danger admin-btn-sm del-merenda" data-id="${m.id}">Excluir</button>
-              </div>
-            </div>`).join("")}</div>` : `<div class="admin-empty"><div class="admin-empty-icon">◐</div>Nenhuma merenda</div>`}
-        </div>
-      `;
-    }
-
-    function bindMerenda() {
-      document.getElementById("f-merenda")?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-        mostrarLoading();
-        try {
-          await api("/api/meals", {
-            method: "POST",
-            body: JSON.stringify({
-              data: fd.get("data"),
-              periodo: fd.get("periodo"),
-              descricao: fd.get("descricao"),
-            }),
-          });
-          carregar("merenda");
-        } catch (err) { alert("Erro: " + err.message); esconderLoading(); }
-      });
-      document.querySelectorAll(".del-merenda").forEach((b) => {
-        b.addEventListener("click", async () => {
-          if (!confirm("Excluir?")) return;
-          mostrarLoading();
-          await api("/api/meals/" + b.dataset.id, { method: "DELETE" });
-          carregar("merenda");
-        });
-      });
-    }
-
-    /* ============================================================
-       USUÁRIOS
-       ============================================================ */
-    async function renderUsuarios() {
-      const us = await api("/api/users").catch(() => []);
-      return `
-        <div class="admin-section">
-          <div class="admin-section-title">➕ Novo usuário</div>
-          <form id="f-user" class="admin-form">
-            <label>Nome<input name="nome" required /></label>
-            <label>Email<input type="email" name="email" required /></label>
-            <label>Senha<input type="password" name="senha" required /></label>
-            <label>Tipo
-              <select name="tipo">
-                <option value="funcionario">Funcionário</option>
-                <option value="professor">Professor</option>
-                <option value="admin">Administrador</option>
-              </select>
-            </label>
-            <label>Cargo (opcional)<input name="cargo" /></label>
-            <button type="submit" class="admin-btn">Criar usuário</button>
-          </form>
-        </div>
-
-        <div class="admin-section">
-          <div class="admin-section-title">Usuários (${us.length})</div>
-          ${us.length ? `<div class="admin-list">${us.map((u) => `
-            <div class="admin-item">
-              <div class="admin-item-content">
-                <div class="admin-item-title">${esc(u.nome)}</div>
-                <div class="admin-item-meta">
-                  <span class="admin-badge">${u.tipo}</span>
-                  ${esc(u.cargo || "—")} — ${esc(u.email)}
-                </div>
-              </div>
-            </div>`).join("")}</div>` : `<div class="admin-empty"><div class="admin-empty-icon">◇</div>Nenhum usuário</div>`}
-        </div>
-      `;
-    }
-
-    function bindUsuarios() {
-      document.getElementById("f-user")?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-        mostrarLoading();
-        try {
-          await api("/api/users", {
-            method: "POST",
-            body: JSON.stringify({
-              nome: fd.get("nome"),
-              email: fd.get("email"),
-              senha: fd.get("senha"),
-              tipo: fd.get("tipo"),
-              cargo: fd.get("cargo"),
-            }),
-          });
-          carregar("usuarios");
-        } catch (err) { alert("Erro: " + err.message); esconderLoading(); }
-      });
-    }
-
-    /* ============================================================
-       PEDIDOS DE CADASTRO
-       ============================================================ */
-    async function renderPedidos() {
-      const pedidos = await api("/api/cadastro?status=pendente").catch(() => []);
-      return `
-        <div class="admin-section">
-          <div class="admin-section-title">Pedidos pendentes (${pedidos.length})</div>
-          ${pedidos.length ? `<div class="admin-list">${pedidos.map((p) => `
-            <div class="admin-item">
-              <div class="admin-item-content">
-                <div class="admin-item-title">${esc(p.nome)}</div>
-                <div class="admin-item-meta">
-                  <span class="admin-badge">${esc(p.tipo)}</span> ${esc(p.email)}
-                </div>
-              </div>
-              <div class="admin-item-actions">
-                <button class="admin-btn aprovar-pedido" data-id="${p.id}" style="background:#38a169;color:white">✓ Aprovar</button>
-                <button class="admin-btn admin-btn-danger rejeitar-pedido" data-id="${p.id}">✕ Rejeitar</button>
-              </div>
-            </div>`).join("")}</div>` : `<div class="admin-empty"><div class="admin-empty-icon">◉</div>Nenhum pedido</div>`}
-        </div>
-      `;
-    }
-
-    function bindPedidos() {
-      document.querySelectorAll(".aprovar-pedido").forEach((b) => {
-        b.addEventListener("click", async () => {
-          if (!confirm("Aprovar este cadastro?")) return;
-          mostrarLoading("Aprovando...");
-          try {
-            await api(`/api/cadastro/${b.dataset.id}/aprovar`, { method: "POST" });
-            alert("✅ Aprovado!");
-            carregar("pedidos");
-          } catch (e) { alert("Erro: " + e.message); esconderLoading(); }
-        });
-      });
-      document.querySelectorAll(".rejeitar-pedido").forEach((b) => {
-        b.addEventListener("click", async () => {
-          const motivo = prompt("Motivo da rejeição (opcional):");
-          if (motivo === null) return;
-          mostrarLoading("Rejeitando...");
-          try {
-            await api(`/api/cadastro/${b.dataset.id}/rejeitar`, {
-              method: "POST",
-              body: JSON.stringify({ motivo }),
-            });
-            carregar("pedidos");
-          } catch (e) { alert("Erro: " + e.message); esconderLoading(); }
-        });
-      });
-    }
-
-    /* ============================================================
-       ANÁLISE PREDITIVA (EVASÃO)
-       ============================================================ */
-    async function renderEvasaoAdmin() {
-      const stats = await api("/api/evasao/estatisticas").catch(() => ({
-        total: 0, critico: 0, alto: 0, medio: 0, baixo: 0,
-      }));
-
-      return `
-        <div class="admin-section">
-          <div class="admin-section-title">⚠️ Análise Preditiva de Evasão</div>
-          <p style="color:#5a6472;font-size:0.9rem;margin-bottom:18px">
-            Analisa todos os alunos e identifica risco de evasão baseado em 4 fatores:
-            <strong>faltas</strong>, <strong>queda de notas</strong>,
-            <strong>atividades pendentes</strong> e <strong>dias sem acessar</strong>.
-          </p>
-
-          ${stats.total > 0 ? `
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px">
-              ${cardEstat("👥", stats.total, "Total", "#2a5298")}
-              ${cardEstat("🚨", stats.critico, "Crítico", "#e53e3e")}
-              ${cardEstat("⚠️", stats.alto, "Alto", "#ed8936")}
-              ${cardEstat("⚡", stats.medio, "Médio", "#ecc94b")}
-              ${cardEstat("✅", stats.baixo, "Baixo", "#38a169")}
-            </div>
-          ` : ""}
-
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <a href="/admin-evasao.html" class="admin-btn" style="text-decoration:none">📊 Abrir dashboard completo</a>
-            <button id="btn-reanalisar" class="admin-btn admin-btn-sec">🔄 Re-analisar todos</button>
-          </div>
-        </div>
-      `;
-    }
-
-    function cardEstat(icone, valor, label, cor) {
-      return `
-        <div style="background:white;border-radius:12px;padding:16px;text-align:center;border-left:4px solid ${cor};box-shadow:0 2px 8px rgba(0,0,0,0.05)">
-          <div style="font-size:1.6rem;margin-bottom:6px">${icone}</div>
-          <div style="font-size:1.5rem;font-weight:900;color:#1e3c72">${valor}</div>
-          <div style="font-size:0.68rem;color:#8895a7;text-transform:uppercase;letter-spacing:0.4px;font-weight:700">${label}</div>
-        </div>`;
-    }
-
-    function bindEvasaoAdmin() {
-      document.getElementById("btn-reanalisar")?.addEventListener("click", async () => {
-        if (!confirm("Analisar TODOS os alunos? Pode levar 1-2 min.")) return;
-        mostrarLoading("Analisando...");
-        try {
-          const r = await api("/api/evasao/analisar", { method: "POST" });
-          alert(`✅ ${r.analisados} alunos analisados!`);
-          carregar("evasao");
-        } catch (e) {
-          alert("Erro: " + e.message);
-          esconderLoading();
-        }
-      });
-    }
-
-    /* ============================================================
-       CÓDIGOS DE VÍNCULO
-       ============================================================ */
-    async function renderCodigos() {
-      const codigos = await api("/api/pais/admin/codigos").catch(() => []);
-
-      return `
-        <div class="admin-section">
-          <div class="admin-section-title">🔑 Gerar código de vínculo</div>
-          <p style="color:#5a6472;font-size:0.85rem;margin-bottom:16px">
-            Gere um código e entregue ao responsável do aluno. Ele usa esse código no cadastro
-            do Portal do Responsável para vincular o filho.
-          </p>
-          <form id="f-codigo" class="admin-form">
-            <label>Matrícula do aluno
-              <input name="aluno_matricula" required placeholder="Ex: 202430395866" />
-            </label>
-            <label>Nome do aluno
-              <input name="aluno_nome" required placeholder="Ex: Pedro Victor" />
-            </label>
-            <button type="submit" class="admin-btn">Gerar código</button>
-          </form>
-        </div>
-
-        <div class="admin-section">
-          <div class="admin-section-title">Códigos gerados (${codigos.length})</div>
-          ${codigos.length ? `<div class="admin-list">${codigos.map((c) => `
-            <div class="admin-item">
-              <div class="admin-item-content">
-                <div class="admin-item-title" style="font-family:monospace;font-size:1.15rem;letter-spacing:2px;color:#2a5298">
-                  ${esc(c.codigo)}
-                </div>
-                <div class="admin-item-meta">
-                  Aluno: <strong>${esc(c.aluno_nome || "?")}</strong> (${esc(c.aluno_matricula)}) —
-                  ${c.usado ? "✅ Usado" : "⏳ Não usado"}
-                </div>
-              </div>
-              <div class="admin-item-actions">
-                ${!c.usado ? `<button class="admin-btn admin-btn-sec admin-btn-sm copiar-codigo" data-codigo="${esc(c.codigo)}">📋 Copiar</button>` : ""}
-              </div>
-            </div>`).join("")}</div>` : `
-            <div class="admin-empty"><div class="admin-empty-icon">🔑</div>Nenhum código gerado ainda</div>`}
-        </div>
-      `;
-    }
-
-    function bindCodigos() {
-      document.getElementById("f-codigo")?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-        mostrarLoading("Gerando código...");
-        try {
-          const r = await api("/api/pais/admin/gerar-codigo", {
-            method: "POST",
-            body: JSON.stringify({
-              aluno_matricula: fd.get("aluno_matricula"),
-              aluno_nome: fd.get("aluno_nome"),
-            }),
-          });
-          alert(`✅ Código gerado: ${r.codigo}\n\nEntregue ao responsável do aluno.`);
-          carregar("codigos");
-        } catch (err) {
-          alert("Erro: " + err.message);
-          esconderLoading();
-        }
-      });
-
-      document.querySelectorAll(".copiar-codigo").forEach((b) => {
-        b.addEventListener("click", () => {
-          navigator.clipboard.writeText(b.dataset.codigo);
-          const txt = b.textContent;
-          b.textContent = "✓ Copiado!";
-          setTimeout(() => { b.textContent = txt; }, 1500);
-        });
-      });
-    }
-
-    /* ============================================================
-       MURAL DE HONRA (admin)
-       ============================================================ */
-    async function renderMuralAdmin() {
-      const atual = await api("/api/premios/mural/atual").catch(() => []);
-
-      return `
-        <div class="admin-section">
-          <div class="admin-section-title">🏛️ Mural de Honra — Destaques do mês</div>
-          <p style="color:#5a6472;font-size:0.9rem;margin-bottom:16px">
-            O sistema pega automaticamente os <strong>3 alunos com mais pontos</strong> do mês
-            e coloca no Mural de Honra público.
-          </p>
-          <button id="btn-gerar-mural" class="admin-btn">🎖️ Gerar Mural do Mês</button>
-        </div>
-
-        ${atual.length ? `
-          <div class="admin-section">
-            <div class="admin-section-title">Destaques atuais (${atual.length})</div>
-            <div class="admin-list">
-              ${atual.map((a) => `
-                <div class="admin-item">
-                  <div class="admin-item-content">
-                    <div class="admin-item-title">
-                      ${a.posicao === 1 ? "🥇" : a.posicao === 2 ? "🥈" : "🥉"}
-                      ${esc(a.aluno_nome)}
-                    </div>
-                    <div class="admin-item-meta">
-                      ${esc(a.turma || "—")} — ${a.pontos} pts
-                    </div>
-                  </div>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-        ` : ""}
-      `;
-    }
-
-    function bindMuralAdmin() {
-      document.getElementById("btn-gerar-mural")?.addEventListener("click", async () => {
-        if (!confirm("Gerar Mural de Honra deste mês com o top 3 alunos?")) return;
-        mostrarLoading("Gerando...");
-        try {
-          await api("/api/premios/mural/gerar", { method: "POST" });
-          alert("✅ Mural atualizado!");
-          carregar("mural");
-        } catch (e) {
-          alert("Erro: " + e.message);
-          esconderLoading();
-        }
-      });
-    }
-
-    /* ============================================================
-       CERTIFICADOS (admin)
-       ============================================================ */
-    async function renderCertificados() {
-      const [certificados, alunos] = await Promise.all([
-        api("/api/premios/certificados").catch(() => []),
-        api("/api/alunos/lista").catch(() => []),
-      ]);
-
-      const turmas = [...new Set(alunos.map((a) => a.turma).filter(Boolean))].sort();
-
-      return `
-        <div class="admin-section">
-          <div class="admin-section-title">🎖️ Emitir certificado</div>
-          <form id="f-certificado" class="admin-form">
-            <label>Título do certificado
-              <input name="titulo" required placeholder="Ex: Participação na Semana da Leitura" />
-            </label>
-            <label>Descrição (opcional)
-              <textarea name="descricao" placeholder="Detalhes do certificado..."></textarea>
-            </label>
-            <label>Tipo
-              <select name="tipo">
-                <option value="conquista">🏆 Conquista</option>
-                <option value="destaque">⭐ Destaque</option>
-                <option value="participacao">📜 Participação</option>
-                <option value="menção">🎖️ Menção honrosa</option>
-                <option value="personalizado">✏️ Personalizado</option>
-              </select>
-            </label>
-
-            <label>Turma (para emitir pra todos)
-              <select id="turma-cert">
-                <option value="">— Selecione a turma —</option>
-                ${turmas.map((t) => `<option value="${esc(t)}">${esc(t)}</option>`).join("")}
-              </select>
-            </label>
-
-            <label style="display:flex;align-items:center;gap:8px;text-transform:none">
-              <input type="radio" name="modo" value="turma" checked style="width:auto" />
-              Emitir para <strong>toda a turma</strong>
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;text-transform:none">
-              <input type="radio" name="modo" value="individual" style="width:auto" />
-              Emitir para <strong>alunos específicos</strong>
-            </label>
-
-            <div id="alunos-individual" style="display:none;margin-top:12px">
-              <label>Escolha os alunos
-                <div id="lista-alunos-checkbox" style="max-height:250px;overflow-y:auto;background:#fafbfc;padding:12px;border-radius:10px;margin-top:8px">
-                  ${alunos.length ? alunos.map((a) => `
-                    <label style="display:flex;align-items:center;gap:10px;padding:8px;text-transform:none;font-weight:400;margin:0">
-                      <input type="checkbox" class="aluno-check" value="${esc(a.matricula)}"
-                             data-nome="${esc(a.nome || '')}" data-turma="${esc(a.turma || '')}" style="width:auto" />
-                      <span><strong>${esc(a.nome)}</strong> — ${esc(a.turma || '—')}</span>
-                    </label>
-                  `).join("") : "<p style='color:#8895a7;font-size:0.85rem'>Nenhum aluno cadastrado</p>"}
-                </div>
-              </label>
-            </div>
-
-            <button type="submit" class="admin-btn">🎖️ Emitir certificados</button>
-          </form>
-        </div>
-
-        <div class="admin-section">
-          <div class="admin-section-title">Certificados emitidos (${certificados.length})</div>
-          ${certificados.length ? `<div class="admin-list">${certificados.map((c) => `
-            <div class="admin-item">
-              <div class="admin-item-content">
-                <div class="admin-item-title">🎖️ ${esc(c.titulo)}</div>
-                <div class="admin-item-meta">
-                  <strong>${esc(c.aluno_nome)}</strong> (${esc(c.turma || "—")}) — ${fmtData(c.emitido_em)}
-                </div>
-                <div class="admin-item-meta" style="margin-top:4px">
-                  Código: <code style="font-family:monospace">${esc(c.codigo_verificacao)}</code>
-                </div>
-              </div>
-              <div class="admin-item-actions">
-                <button class="admin-btn admin-btn-danger admin-btn-sm del-cert" data-id="${c.id}">Excluir</button>
-              </div>
-            </div>`).join("")}</div>` : `<div class="admin-empty"><div class="admin-empty-icon">🎖️</div>Nenhum certificado emitido</div>`}
-        </div>
-      `;
-    }
-
-    function bindCertificados() {
-      // Toggle entre turma / individual
-      document.querySelectorAll('input[name="modo"]').forEach((r) => {
-        r.addEventListener("change", () => {
-          const div = document.getElementById("alunos-individual");
-          div.style.display = r.value === "individual" && r.checked ? "block" : "none";
-        });
-      });
-
-      document.getElementById("f-certificado")?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-        const modo = fd.get("modo");
-
-        let destinatarios = [];
-
-        if (modo === "turma") {
-          const turma = fd.get("turma_cert") || document.getElementById("turma-cert").value;
-          if (!turma) return alert("Escolha a turma");
-
-          const alunos = await api("/api/alunos/lista").catch(() => []);
-          destinatarios = alunos
-            .filter((a) => a.turma === turma)
-            .map((a) => ({ matricula: a.matricula, nome: a.nome, turma: a.turma }));
-
-          if (destinatarios.length === 0) return alert("Nenhum aluno nessa turma");
-        } else {
-          document.querySelectorAll(".aluno-check:checked").forEach((c) => {
-            destinatarios.push({
-              matricula: c.value,
-              nome: c.dataset.nome,
-              turma: c.dataset.turma,
-            });
-          });
-
-          if (destinatarios.length === 0) return alert("Escolha pelo menos um aluno");
-        }
-
-        if (!confirm(`Emitir ${destinatarios.length} certificado(s)?`)) return;
-
-        mostrarLoading("Emitindo...");
-        try {
-          await api("/api/premios/certificados/emitir", {
-            method: "POST",
-            body: JSON.stringify({
-              destinatarios,
-              tipo: fd.get("tipo"),
-              titulo: fd.get("titulo"),
-              descricao: fd.get("descricao"),
-            }),
-          });
-          alert(`✅ ${destinatarios.length} certificado(s) emitido(s)!`);
-          carregar("certificados");
-        } catch (err) {
-          alert("Erro: " + err.message);
-          esconderLoading();
-        }
-      });
-
-      document.querySelectorAll(".del-cert").forEach((b) => {
-        b.addEventListener("click", async () => {
-          if (!confirm("Excluir certificado?")) return;
-          mostrarLoading();
-          await api("/api/premios/certificados/" + b.dataset.id, { method: "DELETE" });
-          carregar("certificados");
-        });
-      });
-    }
-
-    /* ============================================================
-       BIND CENTRAL
-       ============================================================ */
-    function bind(aba) {
-      if (aba === "posts")        bindPosts();
-      if (aba === "avisos")       bindAvisos();
-      if (aba === "eventos")      bindEventos();
-      if (aba === "merenda")      bindMerenda();
-      if (aba === "usuarios")     bindUsuarios();
-      if (aba === "pedidos")      bindPedidos();
-      if (aba === "evasao")       bindEvasaoAdmin();
-      if (aba === "codigos")      bindCodigos();
-      if (aba === "mural")        bindMuralAdmin();
-      if (aba === "certificados") bindCertificados();
-    }
-
-    /* ============================================================
-       INICIALIZA
-       ============================================================ */
-    carregar("posts");
-  </script>
+    </div>
+
+    <nav class="painel-nav">
+      <button class="painel-nav-item ativo" data-aba="posts">
+        <svg viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+        <span>Postagens</span>
+      </button>
+      <button class="painel-nav-item" data-aba="avisos">
+        <svg viewBox="0 0 24 24"><path d="M3 11v2a1 1 0 0 0 1 1h2l4 5h2V4H8L4 9H3z"/><path d="M16 8a5 5 0 0 1 0 8"/></svg>
+        <span>Avisos</span>
+      </button>
+      <button class="painel-nav-item" data-aba="mural-segmentado">
+        <span class="admin-nav-icon">📢</span>
+        <span>Mural Segmentado</span>
+      </button>
+      <button class="painel-nav-item" data-aba="manutencao">
+        <span class="admin-nav-icon">🔧</span>
+        <span>Manutenção</span>
+      </button>
+      <button class="painel-nav-item" data-aba="reclamacoes">
+        <span class="admin-nav-icon">📝</span>
+        <span>Reclamações</span>
+      </button>
+      <button class="painel-nav-item" data-aba="agenda">
+        <span class="admin-nav-icon">📅</span>
+        <span>Agenda Semanal</span>
+      </button>
+      <button class="painel-nav-item" data-aba="eventos">
+        <svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+        <span>Eventos</span>
+      </button>
+      <button class="painel-nav-item" data-aba="merenda">
+        <svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+        <span>Merenda</span>
+      </button>
+      <button class="painel-nav-item" data-aba="turmas">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Turmas</span>
+      </button>
+      <button class="painel-nav-item" data-aba="usuarios">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+        <span>Usuários</span>
+      </button>
+      <button class="painel-nav-item" data-aba="pedidos">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+        <span>Pedidos de cadastro</span>
+      </button>
+      <button class="painel-nav-item" data-aba="codigos">
+        <svg viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+        <span>Códigos de vínculo</span>
+      </button>
+    </nav>
+
+    <div class="painel-sidebar-footer">
+      <a href="/" target="_blank" class="painel-footer-btn">
+        <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
+        <span>Ver site público</span>
+      </a>
+      <button id="btn-sair" class="painel-footer-btn perigo">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+        <span>Sair</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="painel-main">
+    <div class="painel-titulo-secao">
+      <h2 id="admin-titulo">Postagens</h2>
+      <p id="admin-sub">Gerencie as publicações do site</p>
+    </div>
+    <div id="admin-conteudo"></div>
+  </main>
+
+  <script type="module" src="/assets/js/painel-admin.js?v=1790730907"></script>
+  <script src="/assets/js/menu-delegation.js"></script>
+  <script src="/assets/js/btn-sair-limpo.js"></script>
 </body>
 </html>
