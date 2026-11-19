@@ -1,0 +1,312 @@
+import iconv from "iconv-lite";
+
+const BASE = "https://sigeduc.rn.gov.br/sigeduc";
+const TIMEOUT = 120000;
+
+export class SigEducClient {
+  constructor() {
+    this.cookies = new Map();
+    this.vinculos = [];
+    this.vinculoAtivo = null;
+    this._handshakeFeito = false;
+  }
+
+  _cookieHeader() {
+    return Array.from(this.cookies.entries())
+      .map(([k, v]) => `${k}=${v}`)
+      .join("; ");
+  }
+
+  _saveCookies(headers, location) {
+    const setCookies = headers.getSetCookie?.() || [];
+
+    let jsessionIdDoLocation = null;
+    if (location && location.includes("jsessionid=")) {
+      const m = location.match(/jsessionid=([^;.\s]+)/i);
+      if (m) jsessionIdDoLocation = m[1];
+    }
+
+    const jsessionIds = [];
+    for (const c of setCookies) {
+      const [pair] = c.split(";");
+      const eq = pair.indexOf("=");
+      if (eq <= 0) continue;
+      const k = pair.slice(0, eq).trim();
+      const v = pair.slice(eq + 1).trim();
+      if (!k || !v) continue;
+
+      if (k.toUpperCase() === "JSESSIONID") jsessionIds.push(v);
+      else this.cookies.set(k, v);
+    }
+
+    if (jsessionIdDoLocation) {
+      this.cookies.set("JSESSIONID", jsessionIdDoLocation);
+    } else if (jsessionIds.length > 0) {
+      this.cookies.set("JSESSIONID", jsessionIds[jsessionIds.length - 1]);
+    }
+  }
+
+  _text(buffer) {
+    try {
+      const utf8 = buffer.toString("utf8");
+      if (utf8.includes("\uFFFD")) return iconv.decode(buffer, "ISO-8859-1");
+      return utf8;
+    } catch {
+      return iconv.decode(buffer, "ISO-8859-1");
+    }
+  }
+
+  async _fetch(url, opts = {}) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), TIMEOUT);
+    const t0 = Date.now();
+    try {
+      const r = await fetch(url, {
+        ...opts,
+        signal: controller.signal,
+        redirect: "manual",
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Mobile Safari/537.36",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+          Origin: "https://sigeduc.rn.gov.br",
+          Referer: "https://sigeduc.rn.gov.br/sigeduc/",
+          Cookie: this._cookieHeader(),
+          ...(opts.headers || {}),
+        },
+      });
+
+      const location = r.headers.get("location");
+      const setCookiesRaw = r.headers.getSetCookie?.() || [];
+
+      const env = this._cookieHeader() || "(vazio)";
+      const rec = setCookiesRaw.length
+        ? setCookiesRaw.map((c) => c.split(";")[0]).join(" | ")
+        : "(nenhum)";
+      console.log(`      🍪 env=${env}`);
+      console.log(`      🍪 rec=${rec}`);
+      if (location) console.log(`      📍 loc=${location.slice(-70)}`);
+
+      this._saveCookies(r.headers, location);
+
+      const buffer = Buffer.from(await r.arrayBuffer());
+      const dt = Date.now() - t0;
+      const tag = (opts.method || "GET").padEnd(4);
+      const pathCurto = url.replace(BASE, "").slice(0, 55) || url.slice(-55);
+      if (dt > 2000) {
+        console.log(`   🐌 ${tag} ${pathCurto} → ${r.status} em ${dt}ms`);
+      } else {
+        console.log(`   ✓  ${tag} ${pathCurto} → ${r.status} ${dt}ms`);
+      }
+
+      return {
+        status: r.status,
+        text: this._text(buffer),
+        headers: r.headers,
+        location,
+      };
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  async _get(url) {
+    let atual = url;
+    for (let i = 0; i < 6; i++) {
+      console.log(
+        `   ↪ [${i + 1}/6] GET ${atual.replace(BASE, "").slice(0, 70)}`
+      );
+      const r = await this._fetch(atual);
+      if (r.status >= 300 && r.status < 400 && r.location) {
+        const prox = r.location.startsWith("http")
+          ? r.location
+          : `https://sigeduc.rn.gov.br${r.location}`;
+        if (prox === atual) {
+          console.log(`      ⚠️  Loop detectado, parando.`);
+          return r;
+        }
+        atual = prox;
+        continue;
+      }
+      return r;
+    }
+    throw new Error("Muitos redirects");
+  }
+
+  async _post(url, body) {
+    let atual = url;
+    let metodo = "POST";
+    let dados = body;
+    for (let i = 0; i < 6; i++) {
+      console.log(
+        `   ↪ [${i + 1}/6] ${metodo} ${atual.replace(BASE, "").slice(0, 70)}`
+      );
+      const r = await this._fetch(atual, {
+        method: metodo,
+        body: dados,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+      if (r.status >= 300 && r.status < 400 && r.location) {
+        const prox = r.location.startsWith("http")
+          ? r.location
+          : `https://sigeduc.rn.gov.br${r.location}`;
+        if (prox === atual) {
+          console.log(`      ⚠️  Loop detectado, parando.`);
+          return r;
+        }
+        atual = prox;
+        metodo = "GET";
+        dados = undefined;
+        continue;
+      }
+      return r;
+    }
+    throw new Error("Muitos redirects");
+  }
+
+  _viewState(html) {
+    const m = html.match(
+      /name="javax\.faces\.ViewState"[^>]*value="([^"]+)"/
+    );
+    return m ? m[1] : "j_id1";
+  }
+
+  async _handshake() {
+    if (this._handshakeFeito) return;
+    console.log(`📋 [0/5] Abrindo home do SigEduc (handshake de sessão)...`);
+    const r = await this._get(`${BASE}/`);
+    console.log(
+      `   ✅ handshake OK — ${r.text.length} bytes | cookies=${this._cookieHeader()}`
+    );
+    this._handshakeFeito = true;
+  }
+
+  async login(matricula, senha) {
+    // 1) GET inicial na home — cria a sessão JSF + cookies que o
+    //    SIGEduc exige ANTES do POST de login.
+    await this._handshake();
+
+    const url = `${BASE}/logar.do?dispatch=logOn`;
+    const body = new URLSearchParams({
+      urlRedirect: "",
+      acao: "",
+      acessibilidade: "",
+      "user.login": matricula,
+      "user.senha": senha,
+    }).toString();
+
+    const r = await this._post(url, body);
+    const html = r.text;
+
+    console.log(`[LOGIN] final status=${r.status} bytes=${html.length}`);
+    console.log(
+      `[LOGIN] html (300 chars): ${html.slice(0, 300).replace(/\s+/g, " ")}`
+    );
+
+    const htmlVazio = !html || html.length < 500;
+    const temVinculos =
+      html.includes("vinculos") ||
+      html.includes("Escolha seu V") ||
+      html.includes("escolhaVinculo");
+    const temErro =
+      html.includes("Sua sessão foi expirada") ||
+      html.includes("Senha inválida") ||
+      html.includes("senha incorreta") ||
+      html.includes("Usuário não cadastrado") ||
+      html.includes("usuário não encontrado") ||
+      html.includes("login inválido") ||
+      (html.includes("CPF") && html.includes("inválido"));
+
+    const ok = !htmlVazio && !temErro && (temVinculos || html.length > 2000);
+
+    if (ok) {
+      this.vinculos = this._extrairVinculos(html);
+      console.log(`         ${this.vinculos.length} vínculos encontrados`);
+      for (const v of this.vinculos) {
+        console.log(
+          `         vínculo ${v.id}: ${v.escola || "?"} / ${v.ano || "?"}`
+        );
+      }
+    } else {
+      if (htmlVazio) console.log(`         ⚠ HTML vazio`);
+      if (temErro) console.log(`         ⚠ Erro explícito detectado`);
+    }
+
+    return ok;
+  }
+
+  _extrairVinculos(html) {
+    const vinculos = [];
+    const regex =
+      /escolhaVinculo\.do\?dispatch=escolher(?:&amp;|&)vinculo=(\d+)/g;
+    let m;
+    const vistos = new Set();
+
+    while ((m = regex.exec(html)) !== null) {
+      const id = parseInt(m[1]);
+      if (vistos.has(id)) continue;
+      vistos.add(id);
+      vinculos.push({ id });
+    }
+
+    const linhas = html.split(/<tr[^>]*>/);
+    for (const linha of linhas) {
+      const matchVinc = linha.match(/vinculo=(\d+)/);
+      if (!matchVinc) continue;
+      const id = parseInt(matchVinc[1]);
+      const v = vinculos.find((x) => x.id === id);
+      if (!v) continue;
+
+      const tds = [...linha.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)]
+        .map((m) => m[1].replace(/<[^>]+>/g, "").trim())
+        .filter((t) => t);
+
+      if (tds.length >= 4) {
+        v.escola =
+          tds.find(
+            (t) =>
+              t.toUpperCase().includes("ESCOLA") || t.includes("ESTADUAL")
+          ) || "";
+        v.serie = tds.find((t) => t.match(/S[ÉE]RIE|ANO/)) || "";
+        v.ano = tds.find((t) => /^\d{4}$/.test(t)) || "";
+      }
+    }
+
+    return vinculos;
+  }
+
+  async escolherVinculoAutomatico() {
+    if (!this.vinculos || this.vinculos.length === 0) {
+      return this.escolherVinculo(1);
+    }
+    const ordenado = [...this.vinculos].sort((a, b) => {
+      return (parseInt(b.ano) || 0) - (parseInt(a.ano) || 0);
+    });
+    const escolhido = ordenado[0];
+    console.log(
+      `   → Escolhendo vínculo ${escolhido.id} (${escolhido.escola || "?"} / ${escolhido.ano || "?"})`
+    );
+    return this.escolherVinculo(escolhido.id);
+  }
+
+  async escolherVinculo(v) {
+    const url = `${BASE}/escolhaVinculo.do?dispatch=escolher&vinculo=${v}`;
+    const r = await this._get(url);
+    this.vinculoAtivo = v;
+    return r.status >= 200 && r.status < 400;
+  }
+
+  async portal() {
+    const r = await this._get(`${BASE}/portal.do`);
+    return r.text;
+  }
+
+  async boletim() {
+    const r = await this._get(`${BASE}/boletim.do`);
+    return r.text;
+  }
+}

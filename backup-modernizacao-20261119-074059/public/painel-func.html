@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel do Funcionário — E.E.I.M</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo.png" />
+  <link rel="apple-touch-icon" href="/assets/img/logo.png" />
+  <meta name="theme-color" content="#1e3c72" />
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/responsivo.css" />
+  <link rel="stylesheet" href="/assets/css/abas-novas.css" />
+</head>
+<body class="admin-body">
+  <div class="admin-wrap">
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <img src="/assets/img/logo.png" alt="E.E.I.M" class="admin-brand-logo" />
+        <div>
+          <div class="admin-brand-title">E.E.I.M</div>
+          <div class="admin-brand-sub">Painel do Funcionário</div>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <button class="admin-nav-item active" data-aba="merenda">
+          <span class="admin-nav-icon">◐</span>
+          <span>Merenda</span>
+        </button>
+      </nav>
+
+      <div class="admin-sidebar-footer">
+        <a href="/" class="admin-link-sec">Ver site</a>
+        <button id="btn-sair" class="admin-link-sec admin-link-danger">Sair</button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <h1 class="admin-title" id="titulo-aba">Merenda</h1>
+          <p class="admin-subtitle" id="sub-aba">Cadastre a merenda do dia</p>
+        </div>
+        <div class="admin-user">
+          <div class="admin-user-avatar" id="user-avatar">F</div>
+          <div>
+            <div class="admin-user-name" id="user-nome">—</div>
+            <div class="admin-user-role" id="user-cargo">—</div>
+          </div>
+        </div>
+      </header>
+
+      <div id="conteudo-func"></div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { api, esc, fmtData, mostrarLoading, esconderLoading, periodoNome } from "/assets/js/shared.js";
+
+    let user = null;
+    try { user = await api("/api/users/me"); }
+    catch { window.location.href = "/login.html"; }
+
+    document.getElementById("user-nome").textContent = user?.nome || "—";
+    document.getElementById("user-cargo").textContent = user?.cargo || user?.tipo || "—";
+    document.getElementById("user-avatar").textContent = (user?.nome || "F").charAt(0).toUpperCase();
+
+    document.getElementById("btn-sair").addEventListener("click", async () => {
+      await api("/api/users/logout", { method: "POST" }).catch(() => {});
+      window.location.href = "/";
+    });
+
+    async function carregarMerenda() {
+      const el = document.getElementById("conteudo-func");
+      mostrarLoading();
+      try {
+        const ms = await api("/api/meals").catch(() => []);
+        el.innerHTML = `
+          <div class="admin-section">
+            <div class="admin-section-title">Cadastrar merenda</div>
+            <form id="f-merenda" class="admin-form">
+              <label>Data<input type="date" name="data" required /></label>
+              <label>Período
+                <select name="periodo" required>
+                  <option value="manha">Manhã</option>
+                  <option value="almoco">Almoço</option>
+                  <option value="tarde">Tarde</option>
+                  <option value="noite">Noite</option>
+                </select>
+              </label>
+              <label>Descrição<textarea name="descricao" required></textarea></label>
+              <button type="submit" class="admin-btn">Salvar merenda</button>
+            </form>
+          </div>
+          <div class="admin-section">
+            <div class="admin-section-title">Merendas cadastradas (${ms.length})</div>
+            ${ms.length ? `<div class="admin-list">${ms.map(m => `
+              <div class="admin-item">
+                <div class="admin-item-content">
+                  <div class="admin-item-title">${esc(m.descricao)}</div>
+                  <div class="admin-item-meta">${fmtData(m.data)} — ${periodoNome(m.periodo)}</div>
+                </div>
+                <div class="admin-item-actions">
+                  <button class="admin-btn admin-btn-danger admin-btn-sm del-merenda" data-id="${m.id}">Excluir</button>
+                </div>
+              </div>`).join("")}</div>` : `<div class="admin-empty">Nenhuma merenda</div>`}
+          </div>
+        `;
+
+        document.getElementById("f-merenda").addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          mostrarLoading();
+          try {
+            await api("/api/meals", {
+              method: "POST",
+              body: JSON.stringify({
+                data: fd.get("data"),
+                periodo: fd.get("periodo"),
+                descricao: fd.get("descricao"),
+              }),
+            });
+            carregarMerenda();
+          } catch (err) { alert("Erro: " + err.message); esconderLoading(); }
+        });
+
+        document.querySelectorAll(".del-merenda").forEach(b => {
+          b.addEventListener("click", async () => {
+            if (!confirm("Excluir?")) return;
+            mostrarLoading();
+            await api("/api/meals/" + b.dataset.id, { method: "DELETE" });
+            carregarMerenda();
+          });
+        });
+      } catch (e) {
+        el.innerHTML = `<p style="color:#c53030">Erro: ${esc(e.message)}</p>`;
+      } finally {
+        esconderLoading();
+      }
+    }
+
+    carregarMerenda();
+  </script>
+</body>
+</html>

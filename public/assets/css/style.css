@@ -1361,3 +1361,31 @@ button.acao-btn,
   font-family: monospace;
   font-size: 0.72rem;
 }
+
+/* Ordem dos acessos principais */
+.nav-links a[href="/login.html"] {
+  order: 1;
+}
+
+.nav-links a[href="/pais-login.html"] {
+  order: 2;
+}
+
+.nav-links a[data-portal],
+.nav-links a[href="/portal-aluno.html"] {
+  order: 3;
+}
+
+/* Ordem dos acessos principais */
+.nav-links a[href="/login.html"] {
+  order: 1;
+}
+
+.nav-links a[href="/pais-login.html"] {
+  order: 2;
+}
+
+.nav-links a[data-portal],
+.nav-links a[href="/portal-aluno.html"] {
+  order: 3;
+}

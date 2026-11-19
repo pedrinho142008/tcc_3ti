@@ -1,0 +1,95 @@
+/* ============================================================
+   MENU ADMIN — organizado e responsivo
+   ============================================================ */
+
+.admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.admin-nav-grupo {
+  padding: 12px 14px 4px;
+  font-size: 0.62rem;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: rgba(255,255,255,0.78);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+}
+
+.admin-nav-item:hover {
+  background: rgba(255,255,255,0.08);
+  color: white;
+  transform: translateX(2px);
+}
+
+.admin-nav-item.active {
+  background: white;
+  color: #1e3c72;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.admin-nav-icon {
+  font-size: 1.15rem;
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.admin-nav-item span:not(.admin-nav-icon) {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Mobile: menu vira horizontal com scroll */
+@media (max-width: 900px) {
+  .admin-nav {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 6px;
+    gap: 4px;
+    scrollbar-width: none;
+  }
+  .admin-nav::-webkit-scrollbar { display: none; }
+
+  .admin-nav-grupo {
+    display: none;
+  }
+
+  .admin-nav-item {
+    padding: 9px 12px;
+    width: auto;
+    flex-shrink: 0;
+    font-size: 0.78rem;
+    gap: 8px;
+  }
+
+  .admin-nav-item span:not(.admin-nav-icon) {
+    display: none;
+  }
+}

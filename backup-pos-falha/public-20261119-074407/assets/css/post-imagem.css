@@ -1,0 +1,121 @@
+/* ============================================================
+   IMAGENS NAS POSTAGENS — sem zoom, sem corte
+   ============================================================ */
+
+/* ============================================================
+   IMAGEM ÚNICA — mostra INTEIRA
+   ============================================================ */
+.post-imagem-unica {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin: 14px auto;
+  border-radius: 16px;
+  /* SEM overflow: hidden — deixa a imagem aparecer inteira */
+  background: #f5f7fa;
+  border: 1px solid #eef3fb;
+  box-shadow: 0 2px 12px rgba(30, 60, 114, 0.06);
+  /* SEM display:flex — o flex pode centralizar e cortar */
+  line-height: 0; /* remove espaço abaixo da imagem */
+}
+
+.post-imagem-unica img {
+  width: 100%;
+  height: auto;
+  /* SEM max-height — a imagem cresce o quanto precisar */
+  object-fit: contain;
+  display: block;
+  background: #f5f7fa;
+  border-radius: 16px;
+}
+
+/* ============================================================
+   CARROSSEL (múltiplas imagens)
+   ============================================================ */
+.post-carrossel {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 4px 14px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  margin: 14px 0;
+}
+
+.post-carrossel::-webkit-scrollbar { height: 5px; }
+.post-carrossel::-webkit-scrollbar-thumb {
+  background: #c7d2e0;
+  border-radius: 3px;
+}
+
+.post-carrossel-item {
+  position: relative;
+  flex-shrink: 0;
+  width: 82vw;
+  max-width: 400px;
+  border-radius: 14px;
+  /* SEM overflow: hidden */
+  background: #f5f7fa;
+  scroll-snap-align: start;
+  border: 1px solid #eef3fb;
+  line-height: 0;
+}
+
+.post-carrossel-item img {
+  width: 100%;
+  height: auto;
+  /* SEM max-height */
+  object-fit: contain;
+  display: block;
+  background: #f5f7fa;
+  border-radius: 14px;
+}
+
+/* Indicador de carrossel */
+.post-carrossel-indicador {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: -6px;
+  margin-bottom: 8px;
+}
+
+.post-carrossel-indicador .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c7d2e0;
+  transition: all 0.2s;
+}
+
+.post-carrossel-indicador .dot.ativo {
+  background: #2a5298;
+  width: 18px;
+  border-radius: 3px;
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+@media (max-width: 640px) {
+  .post-imagem-unica {
+    border-radius: 12px;
+    max-width: 100%;
+    margin: 12px auto;
+  }
+
+  .post-imagem-unica img {
+    border-radius: 12px;
+  }
+
+  .post-carrossel-item {
+    width: 88vw;
+    max-width: none;
+    border-radius: 12px;
+  }
+
+  .post-carrossel-item img {
+    border-radius: 12px;
+  }
+}

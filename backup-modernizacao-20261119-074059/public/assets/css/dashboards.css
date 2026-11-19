@@ -1,0 +1,537 @@
+/* ============================================================
+   DASHBOARDS — Professor e Aluno
+   ============================================================ */
+
+/* ============================================================
+   GRID DE CARDS DE TURMA (tela inicial do dashboard)
+   ============================================================ */
+.dash-turmas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.dash-turma-card {
+  background: white;
+  border-radius: 20px;
+  padding: 22px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+  box-shadow: 0 4px 20px rgba(30, 60, 114, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.dash-turma-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #1e3c72, #4a7bc8, #7c3aed);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s;
+}
+
+.dash-turma-card:hover {
+  transform: translateY(-6px);
+  border-color: #4a7bc8;
+  box-shadow: 0 16px 40px rgba(30, 60, 114, 0.18);
+}
+
+.dash-turma-card:hover::before {
+  transform: scaleX(1);
+}
+
+.dash-turma-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.dash-turma-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 900;
+  flex-shrink: 0;
+  box-shadow: 0 6px 16px rgba(30, 60, 114, 0.25);
+}
+
+.dash-turma-icon.tecnico {
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.25);
+}
+
+.dash-turma-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-turma-nome {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1e3c72;
+  letter-spacing: -0.3px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-turma-sub {
+  font-size: 0.78rem;
+  color: #8895a7;
+  font-weight: 500;
+}
+
+.dash-turma-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid #eef3fb;
+}
+
+.dash-turma-stat {
+  text-align: center;
+}
+
+.dash-turma-stat .valor {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #2a5298;
+  line-height: 1;
+}
+
+.dash-turma-stat .valor.alerta { color: #ed8936; }
+.dash-turma-stat .valor.perigo { color: #e53e3e; }
+.dash-turma-stat .valor.ok { color: #38a169; }
+
+.dash-turma-stat .label {
+  font-size: 0.6rem;
+  color: #8895a7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+/* ============================================================
+   DASHBOARD DE UMA TURMA ESPECÍFICA
+   ============================================================ */
+.dash-voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1.5px solid #e6e9ef;
+  border-radius: 12px;
+  background: white;
+  color: #2a5298;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: all 0.15s;
+}
+
+.dash-voltar:hover {
+  background: #eef3fb;
+  border-color: #2a5298;
+}
+
+.dash-turma-titulo {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #1e3c72;
+  letter-spacing: -0.4px;
+  margin: 0 0 4px;
+}
+
+.dash-turma-subtitulo {
+  font-size: 0.85rem;
+  color: #8895a7;
+  margin-bottom: 20px;
+}
+
+/* Grid de estatísticas */
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.dash-stat {
+  background: white;
+  border-radius: 16px;
+  padding: 16px 14px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(30, 60, 114, 0.06);
+  transition: transform 0.2s;
+}
+
+.dash-stat:hover {
+  transform: translateY(-3px);
+}
+
+.dash-stat .icone {
+  font-size: 1.4rem;
+  margin-bottom: 8px;
+}
+
+.dash-stat .valor {
+  font-size: 1.6rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #1e3c72;
+  letter-spacing: -0.5px;
+}
+
+.dash-stat .valor.azul { color: #2a5298; }
+.dash-stat .valor.laranja { color: #ed8936; }
+.dash-stat .valor.verde { color: #38a169; }
+.dash-stat .valor.vermelho { color: #e53e3e; }
+.dash-stat .valor.roxo { color: #7c3aed; }
+
+.dash-stat .label {
+  font-size: 0.65rem;
+  color: #8895a7;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+/* ============================================================
+   HISTÓRICO DE ALUNOS
+   ============================================================ */
+.dash-historico {
+  background: white;
+  border-radius: 20px;
+  padding: 22px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(30, 60, 114, 0.06);
+}
+
+.dash-historico-titulo {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1e3c72;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dash-busca {
+  padding: 8px 14px;
+  border: 1.5px solid #e6e9ef;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  background: #f8fafc;
+  width: 100%;
+  max-width: 200px;
+}
+
+.dash-busca:focus {
+  outline: none;
+  border-color: #2a5298;
+  background: white;
+}
+
+.dash-aluno-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border-bottom: 1px solid #f0f4fb;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dash-aluno-row:hover {
+  background: #f8fafc;
+}
+
+.dash-aluno-row:last-child {
+  border-bottom: none;
+}
+
+.dash-aluno-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.dash-aluno-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-aluno-nome {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e3c72;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-aluno-mat {
+  font-size: 0.7rem;
+  color: #8895a7;
+  font-family: monospace;
+}
+
+.dash-aluno-badges {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dash-badge-mini {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.dash-badge-mini.ok { background: #d1fae5; color: #065f46; }
+.dash-badge-mini.pendente { background: #fef3c7; color: #92400e; }
+.dash-badge-mini.zero { background: #fee2e2; color: #991b1b; }
+.dash-badge-mini.media { background: #eef3fb; color: #2a5298; }
+
+.dash-aluno-media {
+  text-align: right;
+  flex-shrink: 0;
+  min-width: 50px;
+}
+
+.dash-aluno-media .v {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #1e3c72;
+  line-height: 1;
+}
+
+.dash-aluno-media .l {
+  font-size: 0.6rem;
+  color: #8895a7;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+/* ============================================================
+   GRÁFICO DE LINHA (entregas por dia)
+   ============================================================ */
+.dash-chart-linha {
+  background: white;
+  border-radius: 20px;
+  padding: 22px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(30, 60, 114, 0.06);
+}
+
+.dash-linha-titulo {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1e3c72;
+  margin-bottom: 16px;
+}
+
+.dash-linha-svg {
+  width: 100%;
+  height: 140px;
+}
+
+/* ============================================================
+   MURAL DO ALUNO (grade semanal)
+   ============================================================ */
+.mural-aluno {
+  background: white;
+  border-radius: 20px;
+  padding: 24px 20px;
+  box-shadow: 0 4px 20px rgba(30, 60, 114, 0.06);
+  margin-bottom: 20px;
+}
+
+.mural-titulo {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1e3c72;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mural-sub {
+  font-size: 0.82rem;
+  color: #8895a7;
+  margin-bottom: 20px;
+}
+
+.mural-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.mural-dia {
+  background: linear-gradient(135deg, #f8fafc, #eef3fb);
+  border-radius: 14px;
+  padding: 14px;
+  min-height: 100px;
+  border: 1px solid #e6e9ef;
+  transition: all 0.2s;
+}
+
+.mural-dia:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(30, 60, 114, 0.08);
+}
+
+.mural-dia.hoje {
+  background: linear-gradient(135deg, #eef3fb, #dbe7fa);
+  border-color: #2a5298;
+  box-shadow: 0 6px 20px rgba(42, 82, 152, 0.15);
+}
+
+.mural-dia-nome {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #2a5298;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mural-dia-nome .num {
+  background: white;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+}
+
+.mural-materia {
+  background: white;
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1e3c72;
+  border-left: 3px solid #2a5298;
+  animation: slideMateria 0.4s ease-out backwards;
+}
+
+.mural-materia:nth-child(2) { animation-delay: 0.05s; }
+.mural-materia:nth-child(3) { animation-delay: 0.1s; }
+.mural-materia:nth-child(4) { animation-delay: 0.15s; }
+.mural-materia:nth-child(5) { animation-delay: 0.2s; }
+
+@keyframes slideMateria {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.mural-vazio {
+  font-size: 0.72rem;
+  color: #8895a7;
+  text-align: center;
+  padding: 8px;
+  font-style: italic;
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+@media (max-width: 640px) {
+  .dash-turmas-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-turma-card {
+    padding: 18px;
+  }
+
+  .dash-turma-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.3rem;
+  }
+
+  .dash-turma-nome {
+    font-size: 1rem;
+  }
+
+  .dash-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dash-stat .valor {
+    font-size: 1.3rem;
+  }
+
+  .dash-aluno-row {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .dash-aluno-avatar {
+    width: 34px;
+    height: 34px;
+    font-size: 0.82rem;
+  }
+
+  .dash-aluno-nome {
+    font-size: 0.82rem;
+  }
+
+  .dash-aluno-media {
+    min-width: 40px;
+  }
+
+  .dash-aluno-media .v {
+    font-size: 0.95rem;
+  }
+
+  .mural-grade {
+    grid-template-columns: 1fr;
+  }
+}

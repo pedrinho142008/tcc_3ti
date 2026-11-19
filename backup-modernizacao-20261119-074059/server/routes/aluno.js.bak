@@ -1,0 +1,336 @@
+import express from "express";
+import jwt from "jsonwebtoken";
+import { adminClient } from "../supabase.js";
+import { SigEducClient } from "../scraper/client.js";
+import { parseBoletim } from "../scraper/boletim.js";
+import { parsePerfil, parseProfessores } from "../scraper/professores.js";
+import { withLoginLock } from "../utils/loginLock.js";
+import {
+  setSessao,
+  getSessao,
+  sessaoRecente,
+  touchSessao,
+} from "../utils/sessionStore.js";
+
+const router = express.Router();
+const SECRET =
+  process.env.JWT_SECRET ||
+  process.env.SUPABASE_JWT_SECRET ||
+  "dev-secret-mude-isto";
+const isProd =
+  process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+
+const COOKIE_OPTS = {
+  httpOnly: true,
+  sameSite: "lax",
+  secure: isProd,
+  maxAge: 30 * 24 * 60 * 60 * 1000,
+  path: "/",
+};
+
+/* ============================================================
+   LOGIN — aceita matrícula OU CPF
+   ============================================================ */
+router.post("/login", async (req, res) => {
+  const { matricula, senha } = req.body;
+
+  if (!matricula || !senha) {
+    return res.status(400).json({ erro: "Matrícula e senha obrigatórios" });
+  }
+
+  const valorNumerico = String(matricula).trim().replace(/\D/g, "");
+
+  if (valorNumerico.length < 6) {
+    return res.status(400).json({
+      erro: "Digite uma matrícula (12 dígitos) ou CPF (11 dígitos).",
+    });
+  }
+
+  let matriculaFinal;
+  let tipoLogin;
+  if (valorNumerico.length === 11) {
+    matriculaFinal = valorNumerico.replace(
+      /^(\d{3})(\d{3})(\d{3})(\d{2})$/,
+      "$1.$2.$3-$4"
+    );
+    tipoLogin = "CPF";
+  } else {
+    matriculaFinal = valorNumerico;
+    tipoLogin = "Matrícula";
+  }
+
+  const t0 = Date.now();
+  console.log(`\n══════════════════════════════════════════════════`);
+  console.log(`🎓 [ALUNO LOGIN] ${tipoLogin}: ${matriculaFinal}`);
+  console.log(`══════════════════════════════════════════════════`);
+
+  try {
+    // 🔒 serializa por matrícula — resolve o "This operation was aborted"
+    const resultado = await withLoginLock(valorNumerico, async () => {
+      // Reaproveita sessão muito recente (evita relogar em sequência)
+      const recente = sessaoRecente(valorNumerico, 60_000);
+      if (recente?.payload) {
+        console.log(
+          `♻️  Sessão recente reaproveitada (${Date.now() - recente.criadoEm}ms)`
+        );
+        return recente.payload;
+      }
+
+      const c = new SigEducClient();
+
+      console.log(`📋 [1/5] Autenticando...`);
+      const t1 = Date.now();
+      const ok = await c.login(matriculaFinal, senha);
+      if (!ok) {
+        const err = new Error("Matrícula/CPF ou senha incorretos");
+        err.status = 401;
+        throw err;
+      }
+      console.log(`✅ Login OK (${Date.now() - t1}ms)`);
+
+      console.log(`📋 [2/5] Escolhendo vínculo...`);
+      const t2 = Date.now();
+      await c.escolherVinculoAutomatico();
+      console.log(`✅ Vínculo ${c.vinculoAtivo} OK (${Date.now() - t2}ms)`);
+
+      console.log(`📋 [3/5] Abrindo portal...`);
+      const t3 = Date.now();
+      const htmlPortal = await c.portal();
+      console.log(
+        `✅ Portal OK — ${htmlPortal.length} bytes (${Date.now() - t3}ms)`
+      );
+
+      if (htmlPortal.length < 1000) {
+        const err = new Error(
+          "Não conseguimos abrir o portal. Verifique os dados e tente novamente."
+        );
+        err.status = 401;
+        throw err;
+      }
+
+      console.log(`📋 [4/5] Extraindo perfil...`);
+      const perfil = parsePerfil(htmlPortal);
+      const professores = parseProfessores(htmlPortal);
+      const nomeAluno = perfil.nome || `Aluno ${matriculaFinal}`;
+      console.log(`✅ Perfil: ${nomeAluno}`);
+
+      console.log(`📋 [5/5] Buscando boletim...`);
+      let boletim = null;
+      try {
+        const htmlBoletim = await c.boletim();
+        boletim = parseBoletim(htmlBoletim);
+
+        for (const d of boletim.disciplinas) {
+          const meta = professores[d.nome] || {};
+          d.professor = meta.professor || "—";
+          d.horario = meta.horario || "—";
+        }
+        console.log(
+          `✅ Boletim OK — ${boletim.disciplinas.length} disciplinas`
+        );
+
+        const matSalvar =
+          perfil.matrícula || perfil.matricula || valorNumerico;
+        adminClient
+          .from("alunos")
+          .update({ boletim, atualizado_em: new Date().toISOString() })
+          .eq("matricula", matSalvar)
+          .then(() => {})
+          .catch(() => {});
+      } catch (e) {
+        console.error(`⚠️ Boletim falhou: ${e.message}`);
+      }
+
+      let alunoId = null;
+      try {
+        const matSalvar =
+          perfil.matrícula || perfil.matricula || valorNumerico;
+        const { data: existente } = await adminClient
+          .from("alunos")
+          .select("id")
+          .eq("matricula", matSalvar)
+          .maybeSingle();
+        if (existente) alunoId = existente.id;
+        else {
+          const { data: novo } = await adminClient
+            .from("alunos")
+            .insert([
+              {
+                matricula: matSalvar,
+                nome: nomeAluno,
+                turma: perfil.turma || null,
+              },
+            ])
+            .select()
+            .single();
+          alunoId = novo?.id;
+        }
+      } catch {}
+
+      const payload = {
+        id: alunoId || valorNumerico,
+        matricula: valorNumerico,
+        nome: nomeAluno,
+        turma: perfil.turma || null,
+        tipo: "aluno",
+        perfil,
+        temBoletim: !!boletim,
+      };
+
+      setSessao(valorNumerico, {
+        client: c,
+        perfil,
+        professores,
+        boletim,
+        payload,
+      });
+
+      console.log(`✅ LOGIN COMPLETO (${Date.now() - t0}ms)\n`);
+      return payload;
+    });
+
+    // token + resposta fora do lock
+    const token = jwt.sign(
+      {
+        id: resultado.id,
+        matricula: resultado.matricula,
+        nome: resultado.nome,
+        tipo: "aluno",
+      },
+      SECRET,
+      { expiresIn: "30d" }
+    );
+
+    res.cookie("token_aluno", token, COOKIE_OPTS);
+    return res.json(resultado);
+  } catch (e) {
+    console.error(`❌ ERRO:`, e.message);
+    const status = e.status || 500;
+    return res.status(status).json({
+      erro:
+        status === 401
+          ? e.message
+          : "Falha ao conectar no SigEduc. Tente novamente.",
+      detalhe: e.message,
+    });
+  }
+});
+
+/* ============================================================
+   BOLETIM
+   ============================================================ */
+router.get("/boletim", async (req, res) => {
+  const token = req.cookies?.token_aluno;
+  if (!token) return res.status(401).json({ erro: "Não autenticado" });
+
+  let payload;
+  try {
+    payload = jwt.verify(token, SECRET);
+  } catch {
+    return res.status(401).json({ erro: "Sessão expirada" });
+  }
+
+  const { matricula } = payload;
+  const sessao = getSessao(matricula);
+
+  if (sessao?.boletim) return res.json(sessao.boletim);
+
+  try {
+    const { data } = await adminClient
+      .from("alunos")
+      .select("boletim")
+      .eq("matricula", matricula)
+      .maybeSingle();
+    if (data?.boletim && Object.keys(data.boletim).length > 0) {
+      if (sessao) sessao.boletim = data.boletim;
+      return res.json(data.boletim);
+    }
+  } catch {}
+
+  if (sessao?.client) {
+    try {
+      const htmlBoletim = await sessao.client.boletim();
+      const boletim = parseBoletim(htmlBoletim);
+      for (const d of boletim.disciplinas) {
+        const meta = sessao.professores[d.nome] || {};
+        d.professor = meta.professor || "—";
+      }
+      sessao.boletim = boletim;
+      return res.json(boletim);
+    } catch (e) {
+      console.error(`❌ Erro busca:`, e.message);
+    }
+  }
+
+  return res.status(202).json({
+    status: "carregando",
+    erro: "O boletim ainda não foi carregado.",
+  });
+});
+
+/* ============================================================
+   RECARREGAR
+   ============================================================ */
+router.post("/boletim/recarregar", async (req, res) => {
+  const token = req.cookies?.token_aluno;
+  if (!token) return res.status(401).json({ erro: "Não autenticado" });
+
+  let payload;
+  try {
+    payload = jwt.verify(token, SECRET);
+  } catch {
+    return res.status(401).json({ erro: "Sessão expirada" });
+  }
+
+  const sessao = getSessao(payload.matricula);
+  if (!sessao?.client) {
+    return res.status(401).json({ erro: "Faça login novamente." });
+  }
+
+  try {
+    const htmlBoletim = await sessao.client.boletim();
+    const boletim = parseBoletim(htmlBoletim);
+    for (const d of boletim.disciplinas) {
+      const meta = sessao.professores[d.nome] || {};
+      d.professor = meta.professor || "—";
+    }
+    sessao.boletim = boletim;
+    touchSessao(payload.matricula);
+    res.json(boletim);
+  } catch (e) {
+    res.status(500).json({ erro: e.message });
+  }
+});
+
+/* ============================================================
+   PERFIL / LOGOUT / ME
+   ============================================================ */
+router.get("/perfil", (req, res) => {
+  const token = req.cookies?.token_aluno;
+  if (!token) return res.status(401).json({ erro: "Não autenticado" });
+  try {
+    const payload = jwt.verify(token, SECRET);
+    const sessao = getSessao(payload.matricula);
+    if (sessao?.perfil) return res.json(sessao.perfil);
+    res.status(404).json({ erro: "Perfil não encontrado" });
+  } catch {
+    res.status(401).json({ erro: "Sessão expirada" });
+  }
+});
+
+router.post("/logout", (req, res) => {
+  res.clearCookie("token_aluno", { path: "/" });
+  res.json({ ok: true });
+});
+
+router.get("/me", (req, res) => {
+  const token = req.cookies?.token_aluno;
+  if (!token) return res.status(401).json({ erro: "Não autenticado" });
+  try {
+    res.json(jwt.verify(token, SECRET));
+  } catch {
+    res.status(401).json({ erro: "Sessão expirada" });
+  }
+});
+
+export default router;

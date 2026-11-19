@@ -1,0 +1,93 @@
+
+:root {
+  --portal-blue: #102d59;
+  --portal-blue-dark: #091d3b;
+  --portal-yellow: #ffcc32;
+  --portal-background: #f4f6fb;
+  --portal-text: #192b45;
+  --portal-radius: 16px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--portal-background);
+  color: var(--portal-text);
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a {
+  transition: background-color .16s ease,
+              color .16s ease,
+              border-color .16s ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--portal-yellow);
+  outline-offset: 3px;
+}
+
+header, .header, .navbar, nav, .topbar {
+  position: relative;
+}
+
+.card, .dashboard-card, .stat-card,
+.painel-card, .module-card {
+  border-radius: var(--portal-radius);
+  transition: box-shadow .18s ease,
+              border-color .18s ease;
+}
+
+.card:hover, .dashboard-card:hover,
+.module-card:hover {
+  box-shadow: 0 8px 24px rgba(16,45,89,.09);
+}
+
+button, .btn, .button {
+  border-radius: 10px;
+}
+
+img {
+  max-width: 100%;
+}
+
+iframe {
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  .container, .main-content, main {
+    max-width: 100%;
+  }
+
+  .card, .dashboard-card, .module-card {
+    border-radius: 13px;
+  }
+
+  button, .btn {
+    min-height: 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+

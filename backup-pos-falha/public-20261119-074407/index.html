@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1e3c72" />
+  <title>E.E.I.M — Escola Estadual Ielmo Marinho</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo.png" />
+  <link rel="apple-touch-icon" href="/assets/img/logo.png" />
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/post-form.css" />
+  <link rel="stylesheet" href="/assets/css/responsivo.css" />
+  <link rel="stylesheet" href="/assets/css/curtir.css" />
+  <link rel="stylesheet" href="/assets/css/post-imagem.css" />
+<link rel="stylesheet" href="/css/portal-modernizacao.css">
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="/" class="nav-brand">
+        <img src="/assets/img/logo.png" alt="E.E.I.M" class="nav-logo" />
+        <span>E.E.I.M</span>
+        <span class="badge">Ielmo Marinho</span>
+      </a>
+      <button class="menu-btn" type="button" aria-label="Menu">☰</button>
+      <div class="nav-links">
+        <a href="/" class="active">Home</a>
+        <a href="/eventos.html">Eventos</a>
+        <a href="/merenda.html">Merenda</a>
+        <a href="/contato.html">Contato</a>
+        <a href="/gamificacao.html">🏆 Gamificação</a>
+        <a href="/pais-login.html">👨‍👩‍👧 Responsáveis</a>
+        <a href="/login.html">Login</a>
+        <a href="/portal-aluno.html" class="cta">Portal do Estudante</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <h1>Bem-vindo à <span>E.E.I.M</span></h1>
+      <p>Escola Estadual Ielmo Marinho — Educação pública de qualidade no coração do Rio Grande do Norte.</p>
+      <div class="hero-actions">
+        <a href="/portal-aluno.html" class="btn">🎓 Portal do Estudante</a>
+        <a href="/contato.html" class="btn btn-outline">📍 Como chegar</a>
+      </div>
+    </section>
+
+    <div id="avisos"></div>
+
+    <section class="card">
+      <h2>Últimas Postagens</h2>
+      <div id="lista-posts"><p class="muted">Carregando...</p></div>
+    </section>
+
+    <section class="card">
+      <h2>Merenda de Hoje</h2>
+      <div id="merenda-hoje" class="grid-auto"><p class="muted">Carregando...</p></div>
+    </section>
+
+    <section class="card">
+      <h2>Próximos Eventos</h2>
+      <div id="lista-eventos" class="grid-auto"><p class="muted">Carregando...</p></div>
+    </section>
+
+    <footer class="rodape">
+      <strong>E.E.I.M Escola Estadual Ielmo Marinho</strong><br>
+      R. Jose Camilo Bezerra, 257-249 • Ielmo Marinho - RN<br>
+      (84) 99106-4898
+    </footer>
+  </div>
+
+  <script type="module">
+    import { api, esc, fmtData, fmtCurta, initConfig, periodoNome } from "/assets/js/shared.js";
+
+    initConfig();
+
+    const [avisos, posts, merenda, eventos] = await Promise.all([
+      api("/api/announcements").catch(() => []),
+      api("/api/posts").catch(() => []),
+      api("/api/meals/hoje").catch(() => []),
+      api("/api/events").catch(() => []),
+    ]);
+
+    // Identificação do visitante (curtidas/comentários)
+    let visitante = JSON.parse(localStorage.getItem("visitante") || "null");
+    if (!visitante) {
+      visitante = {
+        tipo: "visitante",
+        id: "v_" + Math.random().toString(36).slice(2, 12),
+        nome: "Visitante",
+      };
+      localStorage.setItem("visitante", JSON.stringify(visitante));
+    }
+
+    // Também checa se é aluno logado
+    let alunoLogado = null;
+    try { alunoLogado = JSON.parse(localStorage.getItem("aluno") || "null"); } catch {}
+
+    const autor = alunoLogado
+      ? { tipo: "aluno", id: alunoLogado.matricula, nome: alunoLogado.nome }
+      : visitante;
+
+    if (avisos.length) {
+      document.getElementById("avisos").innerHTML = avisos.map(a =>
+        `<div class="aviso-banner ${a.urgente ? "urgente" : ""}">
+          <span style="font-size:1.3rem">${a.urgente ? "🚨" : "📢"}</span>
+          <span>${esc(a.texto)}</span>
+        </div>`).join("");
+    }
+
+    document.getElementById("lista-posts").innerHTML = posts.length
+      ? posts.map(p => renderPost(p, autor)).join("")
+      : `<p class="muted">Nenhuma postagem ainda.</p>`;
+
+    document.getElementById("merenda-hoje").innerHTML = merenda.length
+      ? merenda.map(m => `
+          <div class="tile">
+            <div class="tile-date">${fmtCurta(m.data)}</div>
+            <span class="tile-tag">${periodoNome(m.periodo)}</span>
+            <div class="tile-text">${esc(m.descricao)}</div>
+          </div>`).join("")
+      : `<p class="muted" style="grid-column:1/-1;text-align:center;padding:20px">Nenhuma merenda cadastrada para hoje.</p>`;
+
+    document.getElementById("lista-eventos").innerHTML = eventos.length
+      ? eventos.slice(0, 4).map(e => `
+          <div class="tile">
+            <div class="tile-date">${fmtData(e.data_inicio)}</div>
+            <div class="tile-title">${esc(e.titulo)}</div>
+            ${e.descricao ? `<div class="tile-text">${esc(e.descricao)}</div>` : ""}
+            ${e.local ? `<div class="tile-loc">📍 ${esc(e.local)}</div>` : ""}
+          </div>`).join("")
+      : `<p class="muted" style="grid-column:1/-1;text-align:center;padding:20px">Nenhum evento agendado.</p>`;
+
+    function renderPost(p, autor) {
+      const imgs = (p.imagens && p.imagens.length)
+        ? p.imagens
+        : (p.imagem_url ? [p.imagem_url] : []);
+      const temMultiplas = imgs.length > 1;
+      const curtidasAtivas = p.curtidas_ativas !== false;
+      const comentariosAtivos = p.comentarios_ativos !== false;
+
+      // Bloco de imagens
+      let blocoImagens = "";
+      if (imgs.length === 1) {
+        blocoImagens = `
+          <div class="post-imagem-unica">
+            <img src="${esc(imgs[0])}" alt="" loading="lazy" />
+          </div>`;
+      } else if (imgs.length > 1) {
+        blocoImagens = `
+          <div class="post-carrossel" data-carrossel="${p.id}">
+            ${imgs.map((img, i) => `
+              <div class="post-carrossel-item">
+                <img src="${esc(img)}" alt="" loading="lazy" />
+              </div>
+            `).join("")}
+          </div>
+          <div class="post-carrossel-indicador" data-indicador="${p.id}">
+            ${imgs.map((_, i) => `<span class="dot ${i === 0 ? "ativo" : ""}"></span>`).join("")}
+          </div>`;
+      }
+
+      // Aviso de import do Instagram
+      const avisoInsta = p.importado_de
+        ? `<p style="font-size:0.7rem;color:#8895a7;margin-top:10px">
+             📷 Importado do Instagram — <a href="${esc(p.importado_de)}" target="_blank" style="color:#2a5298">ver original</a>
+           </p>`
+        : "";
+
+      return `
+        <article class="post" data-post-id="${p.id}">
+          <div class="post-head">
+            <h3 class="post-title">${esc(p.titulo)}</h3>
+            <span class="chip ${p.categoria}">${p.categoria}</span>
+          </div>
+          <p class="post-date">${fmtData(p.criado_em)}</p>
+
+          ${blocoImagens}
+
+          <p class="post-body">${esc(p.texto)}</p>
+
+          <div class="post-acoes">
+            ${curtidasAtivas ? `
+              <button class="acao-btn btn-curtir" data-id="${p.id}" data-ativo="0" aria-label="Curtir">
+                <span class="icone">
+                  <img class="img-unlike" src="/assets/img/unlike.png" alt="Curtir" />
+                  <img class="img-like" src="/assets/img/like.png" alt="Curtido" style="display:none" />
+                </span>
+                <span class="contador curtidas-count">${p.curtidas_count || 0}</span>
+              </button>
+            ` : ""}
+
+            ${comentariosAtivos ? `
+              <button class="acao-btn btn-comentar" data-id="${p.id}" aria-label="Comentar">
+                <span class="icone">
+                  <img src="/assets/img/chat.png" alt="Comentar" />
+                </span>
+                <span class="contador comentarios-count">${p.comentarios_count || 0}</span>
+              </button>
+            ` : ""}
+          </div>
+
+          ${comentariosAtivos ? `
+            <div class="secao-comentarios" id="comentarios-${p.id}" style="display:none;margin-top:12px;padding-top:16px;border-top:1px solid #eef3fb">
+              <div class="lista-comentarios"></div>
+              <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+                <input type="text" placeholder="Seu nome..." class="input-nome-coment" maxlength="40" style="flex:0 0 130px;padding:10px 14px;border:1.5px solid #e6e9ef;border-radius:12px;font-family:inherit;font-size:0.85rem" />
+                <input type="text" placeholder="Escreva um comentário..." class="input-texto-coment" maxlength="300" style="flex:1;min-width:180px;padding:10px 14px;border:1.5px solid #e6e9ef;border-radius:12px;font-family:inherit;font-size:0.85rem" />
+                <button class="btn-enviar-coment" data-id="${p.id}" style="padding:10px 18px;border:none;border-radius:12px;background:#1e3c72;color:white;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Enviar</button>
+              </div>
+            </div>
+          ` : ""}
+
+          ${avisoInsta}
+        </article>
+      `;
+    }
+
+    
+    /* ============================================================
+       CURTIR
+       ============================================================ */
+    document.querySelectorAll(".btn-curtir").forEach((b) => {
+      b.addEventListener("click", async () => {
+        const id = b.dataset.id;
+        const ativo = b.dataset.ativo === "1";
+
+        // Otimista: atualiza visual imediatamente
+        const count = b.querySelector(".curtidas-count");
+        const valorAtual = parseInt(count.textContent) || 0;
+        const novo = ativo ? Math.max(0, valorAtual - 1) : valorAtual + 1;
+
+        count.textContent = novo;
+
+        // Troca as imagens
+        const imgUnlike = b.querySelector(".img-unlike");
+        const imgLike = b.querySelector(".img-like");
+        if (!ativo) {
+          // Curtindo → mostra like.png
+          imgUnlike.style.display = "none";
+          imgLike.style.display = "block";
+        } else {
+          // Descurtindo → mostra unlike.png
+          imgUnlike.style.display = "block";
+          imgLike.style.display = "none";
+        }
+
+        b.dataset.ativo = ativo ? "0" : "1";
+
+        // Animação
+        b.classList.add("animar");
+        setTimeout(() => b.classList.remove("animar"), 700);
+
+        try {
+          const r = await api(`/api/posts/${id}/curtir`, {
+            method: "POST",
+            body: JSON.stringify({
+              autor_tipo: autor.tipo,
+              autor_id: autor.id,
+              autor_nome: autor.nome,
+            }),
+          });
+
+          // Confirma com o servidor
+          if (typeof r.total === "number") {
+            count.textContent = r.total;
+            b.dataset.ativo = r.curtido ? "1" : "0";
+
+            if (r.curtido) {
+              imgUnlike.style.display = "none";
+              imgLike.style.display = "block";
+            } else {
+              imgUnlike.style.display = "block";
+              imgLike.style.display = "none";
+            }
+          }
+        } catch (e) {
+          // Reverte se der erro
+          count.textContent = valorAtual;
+          b.dataset.ativo = ativo ? "1" : "0";
+          if (ativo) {
+            imgUnlike.style.display = "none";
+            imgLike.style.display = "block";
+          } else {
+            imgUnlike.style.display = "block";
+            imgLike.style.display = "none";
+          }
+          alert("Erro ao curtir: " + e.message);
+        }
+      });
+    });
+
+    /* ============================================================
+       INDICADOR DE CARROSSEL (bolinhas)
+       ============================================================ */
+    document.querySelectorAll(".post-carrossel").forEach((el) => {
+      const id = el.dataset.carrossel;
+      const indicador = document.querySelector(`[data-indicador="${id}"]`);
+      if (!indicador) return;
+      const dots = indicador.querySelectorAll(".dot");
+
+      el.addEventListener("scroll", () => {
+        const scrollLeft = el.scrollLeft;
+        const itemWidth = el.firstElementChild?.offsetWidth + 10 || 1;
+        const idx = Math.round(scrollLeft / itemWidth);
+        dots.forEach((d, i) => d.classList.toggle("ativo", i === idx));
+      }, { passive: true });
+    });
+
+    /* ============================================================
+       COMENTÁRIOS
+       ============================================================ */
+    document.querySelectorAll(".btn-comentar").forEach((b) => {
+      b.addEventListener("click", async () => {
+        const id = b.dataset.id;
+        const secao = document.getElementById(`comentarios-${id}`);
+        const aberto = secao.style.display !== "none";
+
+        if (aberto) {
+          secao.style.display = "none";
+          return;
+        }
+
+        secao.style.display = "block";
+        const lista = secao.querySelector(".lista-comentarios");
+        lista.innerHTML = `<p style="font-size:0.82rem;color:#8895a7;padding:10px 0">Carregando...</p>`;
+
+        try {
+          const comentarios = await api(`/api/posts/${id}/comentarios`);
+          lista.innerHTML = comentarios.length
+            ? comentarios.map(c => `
+                <div style="padding:10px 0;border-bottom:1px solid #f0f3f8">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                    <strong style="font-size:0.85rem;color:#1e3c72">${esc(c.autor_nome)}</strong>
+                    <span style="font-size:0.7rem;color:#8895a7">${fmtData(c.criado_em)}</span>
+                  </div>
+                  <p style="font-size:0.86rem;color:#4a5568;line-height:1.5;margin:0;white-space:pre-wrap">${esc(c.texto)}</p>
+                </div>
+              `).join("")
+            : `<p style="font-size:0.82rem;color:#8895a7;padding:10px 0">Nenhum comentário. Seja o primeiro!</p>`;
+
+          // Preenche o campo "nome" com o autor atual
+          const inputNome = secao.querySelector(".input-nome-coment");
+          if (inputNome && autor.nome && !inputNome.value) {
+            inputNome.value = autor.nome === "Visitante" ? "" : autor.nome;
+          }
+        } catch (e) {
+          lista.innerHTML = `<p style="font-size:0.82rem;color:#c53030">Erro: ${esc(e.message)}</p>`;
+        }
+      });
+    });
+
+    document.querySelectorAll(".btn-enviar-coment").forEach((b) => {
+      b.addEventListener("click", async () => {
+        const id = b.dataset.id;
+        const secao = document.getElementById(`comentarios-${id}`);
+        const inputNome = secao.querySelector(".input-nome-coment");
+        const inputTexto = secao.querySelector(".input-texto-coment");
+
+        const nome = inputNome.value.trim();
+        const texto = inputTexto.value.trim();
+
+        if (!nome) return alert("Escreva seu nome");
+        if (!texto) return alert("Escreva um comentário");
+
+        b.disabled = true;
+        b.textContent = "...";
+
+        try {
+          await api(`/api/posts/${id}/comentarios`, {
+            method: "POST",
+            body: JSON.stringify({
+              autor_tipo: autor.tipo,
+              autor_id: autor.id,
+              autor_nome: nome,
+              texto,
+            }),
+          });
+
+          // Atualiza contador
+          const count = document.querySelector(`.btn-comentar[data-id="${id}"] .comentarios-count`);
+          if (count) count.textContent = parseInt(count.textContent) + 1;
+
+          // Limpa
+          inputTexto.value = "";
+          b.disabled = false;
+          b.textContent = "Enviar";
+
+          // Recarrega lista
+          const comentarios = await api(`/api/posts/${id}/comentarios`);
+          secao.querySelector(".lista-comentarios").innerHTML = comentarios.map(c => `
+            <div style="padding:10px 0;border-bottom:1px solid #f0f3f8">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                <strong style="font-size:0.85rem;color:#1e3c72">${esc(c.autor_nome)}</strong>
+                <span style="font-size:0.7rem;color:#8895a7">${fmtData(c.criado_em)}</span>
+              </div>
+              <p style="font-size:0.86rem;color:#4a5568;line-height:1.5;margin:0;white-space:pre-wrap">${esc(c.texto)}</p>
+            </div>
+          `).join("");
+        } catch (e) {
+          alert("Erro: " + e.message);
+          b.disabled = false;
+          b.textContent = "Enviar";
+        }
+      });
+    });
+  </script>
+  <script src="/assets/js/menu.js"></script>
+<script src="/js/portal-modernizacao.js" defer></script>
+</body>
+</html>

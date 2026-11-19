@@ -1,0 +1,332 @@
+/* ============================================================
+   FORM DE POSTAGEM — abas Manual / Instagram
+   ============================================================ */
+
+.post-tabs {
+  display: flex;
+  gap: 6px;
+  background: #f5f7fa;
+  padding: 6px;
+  border-radius: 14px;
+  margin-bottom: 22px;
+}
+
+.post-tab {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #5a6472;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.post-tab:hover { background: rgba(255,255,255,0.6); }
+
+.post-tab.ativo {
+  background: white;
+  color: #1e3c72;
+  box-shadow: 0 4px 12px rgba(30, 60, 114, 0.1);
+}
+
+/* Importador de URL */
+.import-box {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.import-box input {
+  flex: 1;
+  min-width: 200px;
+  padding: 14px 18px;
+  border: 2px solid #e6e9ef;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  background: #fafbfc;
+  font-family: inherit;
+}
+
+.import-box input:focus {
+  outline: none;
+  border-color: #2a5298;
+  background: white;
+}
+
+.import-box button {
+  padding: 14px 22px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+  color: white;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.import-box button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(131, 58, 180, 0.4);
+}
+
+.import-box button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.import-status {
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+.import-status.info { background: #eef3fb; color: #2a5298; border-left: 4px solid #2a5298; }
+.import-status.aviso { background: #fef3c7; color: #92400e; border-left: 4px solid #ed8936; }
+.import-status.sucesso { background: #d1fae5; color: #065f46; border-left: 4px solid #38a169; }
+.import-status.erro { background: #fee2e2; color: #991b1b; border-left: 4px solid #e53e3e; }
+
+/* ============================================================
+   CARROSSEL DE IMAGENS — robusto contra falhas
+   ============================================================ */
+
+.carrossel-imagens {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 10px 4px 16px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  min-height: 200px;
+}
+
+.carrossel-imagens::-webkit-scrollbar { height: 6px; }
+.carrossel-imagens::-webkit-scrollbar-thumb {
+  background: #c7d2e0;
+  border-radius: 3px;
+}
+
+.carrossel-item {
+  position: relative;
+  flex-shrink: 0;
+  width: 200px;
+  height: 200px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #f5f7fa;
+  border: 2px solid #e6e9ef;
+  scroll-snap-align: start;
+  transition: transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.carrossel-item:hover { transform: scale(1.02); }
+
+.carrossel-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Quando a imagem falha */
+.carrossel-item.imagem-erro {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  padding: 12px;
+  text-align: center;
+  flex-direction: column;
+  gap: 6px;
+  color: #991b1b;
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.carrossel-item.imagem-erro .ic-erro {
+  font-size: 1.8rem;
+  margin-bottom: 4px;
+}
+
+.carrossel-item.imagem-erro small {
+  font-size: 0.62rem;
+  opacity: 0.75;
+  word-break: break-all;
+  max-width: 100%;
+}
+
+.carrossel-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.7);
+  border: none;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  z-index: 2;
+}
+
+.carrossel-remove:hover { background: #e53e3e; }
+
+.carrossel-add {
+  flex-shrink: 0;
+  width: 200px;
+  height: 200px;
+  border: 2px dashed #c7d2e0;
+  border-radius: 14px;
+  background: #fafbfc;
+  color: #8895a7;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+  scroll-snap-align: start;
+}
+
+.carrossel-add:hover {
+  border-color: #2a5298;
+  background: #eef3fb;
+  color: #2a5298;
+}
+
+.carrossel-add .ic {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+/* Aviso quando não há imagens */
+.carrossel-vazio {
+  flex: 1;
+  padding: 20px;
+  background: #fafbfc;
+  border: 2px dashed #c7d2e0;
+  border-radius: 14px;
+  text-align: center;
+  color: #8895a7;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   Preview da postagem (admin)
+   ============================================================ */
+.preview-post {
+  background: white;
+  border: 1px solid #e6e9ef;
+  border-radius: 18px;
+  padding: 22px;
+  margin-top: 18px;
+}
+
+.preview-post-titulo {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1e3c72;
+  margin-bottom: 6px;
+}
+
+.preview-post-meta {
+  font-size: 0.75rem;
+  color: #8895a7;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.preview-post-texto {
+  font-size: 0.92rem;
+  color: #4a5568;
+  line-height: 1.65;
+  margin-bottom: 14px;
+  white-space: pre-wrap;
+}
+
+/* ============================================================
+   Toggles (curtidas/comentários)
+   ============================================================ */
+.toggles-post {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 0;
+  border-top: 1px solid #eef3fb;
+  border-bottom: 1px solid #eef3fb;
+  margin: 14px 0;
+}
+
+.toggle-post {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: #f5f7fa;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #5a6472;
+  transition: all 0.15s;
+}
+
+.toggle-post:hover { background: #eef3fb; }
+
+.toggle-post input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #2a5298;
+  cursor: pointer;
+}
+
+.toggle-post.ativo {
+  background: #eef3fb;
+  color: #2a5298;
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+@media (max-width: 640px) {
+  .import-box { flex-direction: column; }
+  .import-box button { width: 100%; justify-content: center; }
+
+  .carrossel-item,
+  .carrossel-add { width: 160px; height: 160px; }
+
+  .carrossel-item.imagem-erro { font-size: 0.65rem; }
+  .carrossel-item.imagem-erro .ic-erro { font-size: 1.5rem; }
+}

@@ -88,6 +88,7 @@ const titulos = {
   desempenho:  ["Desempenho", "Veja como você está indo"],
   boletim:     ["Boletim", "Suas notas por disciplina"],
   historico:   ["Histórico", "Atividades que você entregou"],
+  merenda:     ["Merenda", "Confira o cardápio da escola"],
   enviar:      ["Enviar atividade", "Envie um trabalho para seu professor"],
   anotacoes:   ["Anotações", "Seu caderno digital"],
 };
@@ -138,6 +139,7 @@ async function carregar(aba) {
     if (aba === "desempenho")   el.innerHTML = await renderDesempenho();
     if (aba === "boletim")      { el.innerHTML = renderLoadingBoletim(); await renderBoletimComEspera(); }
     if (aba === "historico")    el.innerHTML = await renderHistorico();
+    if (aba === "merenda")      el.innerHTML = await renderMerenda();
     if (aba === "enviar")       { el.innerHTML = await renderEnviar(); bindEnviar(); }
     if (aba === "anotacoes")    { el.innerHTML = await renderAnotacoes(); bindAnotacoes(); }
   } catch (e) {
@@ -151,6 +153,67 @@ async function carregar(aba) {
 /* ============================================================
    HOME — atividades dos professores
    ============================================================ */
+async function renderMerenda() {
+  const refeicoes = await api("/api/meals");
+
+  const periodos = {
+    manha: "Manhã",
+    almoco: "Almoço",
+    tarde: "Tarde",
+    noite: "Noite"
+  };
+
+  if (!Array.isArray(refeicoes) || refeicoes.length === 0) {
+    return `
+      <section class="card-painel">
+        <h2>Cardápio da escola</h2>
+        <div style="text-align:center;padding:32px 16px;color:#718096">
+          <div style="font-size:2rem;margin-bottom:10px">🍽️</div>
+          <strong>Nenhuma merenda cadastrada.</strong>
+          <p style="margin-top:8px">As refeições publicadas pela escola aparecerão aqui.</p>
+        </div>
+      </section>
+    `;
+  }
+
+  const cards = refeicoes.map((m) => {
+    const periodo = periodos[m.periodo] || esc(m.periodo || "Refeição");
+    const descricao = esc(m.descricao || "Descrição não informada.");
+    const data = m.data ? esc(fmtData(m.data)) : "Data não informada";
+    const fotoUrl = typeof m.foto_url === "string" &&
+      /^https?:\/\//i.test(m.foto_url.trim())
+      ? esc(m.foto_url.trim())
+      : "";
+
+    return `
+      <article class="card-painel" style="overflow:hidden;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+          <strong style="color:#1e3c72">${periodo}</strong>
+          <span style="font-size:.85rem;color:#718096">${data}</span>
+        </div>
+        <p style="line-height:1.6;margin:0">${descricao}</p>
+        ${fotoUrl ? `
+          <img src="${fotoUrl}" alt="Foto da refeição"
+            loading="lazy" decoding="async"
+            style="display:block;width:100%;max-height:260px;object-fit:contain;margin-top:14px;border-radius:10px;background:#f7fafc">
+        ` : ""}
+      </article>
+    `;
+  }).join("");
+
+  return `
+    <section>
+      <div class="card-painel" style="margin-bottom:16px">
+        <h2 style="margin:0 0 6px;color:#1e3c72">Cardápio da escola</h2>
+        <p style="margin:0;color:#718096;font-size:.9rem">
+          Refeições publicadas nos últimos dias.
+        </p>
+      </div>
+      ${cards}
+    </section>
+  `;
+}
+
 async function renderHome() {
   const turma = alunoAtual.turma || alunoAtual.perfil?.turma || "";
   const atividades = await api(`/api/classroom/atividades?turma=${encodeURIComponent(turma)}`).catch(() => []);
