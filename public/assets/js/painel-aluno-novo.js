@@ -44,6 +44,7 @@ document.querySelectorAll(".painel-nav-item").forEach((b) => {
    ALUNO LOGADO
    ============================================================ */
 let alunoAtual = null;
+let boletimCache = null;
 const alunoStr = localStorage.getItem("aluno");
 if (!alunoStr) window.location.href = "/portal-aluno.html";
 
@@ -54,13 +55,15 @@ try {
   window.location.href = "/portal-aluno.html";
 }
 
-try {
-  const me = await api("/api/aluno/me");
-  alunoAtual = { ...alunoAtual, ...me };
-} catch {
-  localStorage.removeItem("aluno");
-  window.location.href = "/portal-aluno.html";
-}
+// Valida a sessão em segundo plano, sem bloquear a abertura do painel.
+api("/api/aluno/me")
+  .then((me) => {
+    alunoAtual = { ...alunoAtual, ...me };
+  })
+  .catch(() => {
+    localStorage.removeItem("aluno");
+    window.location.replace("/portal-aluno.html");
+  });
 
 const setTxt = (id, valor) => {
   const el = document.getElementById(id);
@@ -216,9 +219,12 @@ async function renderMerenda() {
 
 async function renderHome() {
   const turma = alunoAtual.turma || alunoAtual.perfil?.turma || "";
-  const atividades = await api(`/api/classroom/atividades?turma=${encodeURIComponent(turma)}`).catch(() => []);
+  // Uma única consulta alimenta a lista e o mural semanal.
+  const atividades = await api(
+    `/api/classroom/atividades?turma=${encodeURIComponent(turma)}`
+  ).catch(() => []);
 
-  const muralHtml = await renderMuralSemanal().catch(() => "");
+  const muralHtml = await renderMuralSemanal(atividades).catch(() => "");
 
   return `
     ${muralHtml}
@@ -286,11 +292,15 @@ function renderAtividadeHome(a) {
    DESEMPENHO
    ============================================================ */
 async function renderDesempenho() {
-  let boletim = null;
-  try {
-    boletim = await api("/api/aluno/boletim");
-  } catch (e) {
-    boletim = null;
+  let boletim = boletimCache;
+
+  if (!boletim?.disciplinas?.length) {
+    try {
+      boletim = await api("/api/aluno/boletim");
+      if (boletim?.disciplinas?.length) boletimCache = boletim;
+    } catch (e) {
+      boletim = null;
+    }
   }
 
   if (!boletim || !boletim.disciplinas?.length) {
@@ -380,12 +390,16 @@ async function renderBoletimComEspera() {
   const el = document.getElementById("conteudo-aluno");
   let b = null;
   let tentativas = 0;
-  const MAX = 40;
+  const MAX = 1;
 
   while (tentativas < MAX) {
     try {
       const r = await api("/api/aluno/boletim");
-      if (r?.disciplinas?.length) { b = r; break; }
+      if (r?.disciplinas?.length) {
+        b = r;
+        boletimCache = r;
+        break;
+      }
     } catch (e) {
       // Se erro de sessão, para
       if (e.message?.includes("Faça login") || e.message?.includes("expirada")) break;
@@ -400,7 +414,7 @@ async function renderBoletimComEspera() {
           <div style="height:100%;width:${(tentativas/MAX)*100}%;background:#2a5298;transition:width 0.3s"></div>
         </div>
       </div>`;
-    await new Promise((r) => setTimeout(r, 2000));
+
   }
 
   if (!b) {
@@ -463,7 +477,8 @@ async function renderBoletimComEspera() {
 window.recarregarBoletim = async () => {
   mostrarLoading("Recarregando...");
   try {
-    await api("/api/aluno/boletim/recarregar", { method: "POST" });
+    const atualizado = await api("/api/aluno/boletim/recarregar", { method: "POST" });
+    if (atualizado?.disciplinas?.length) boletimCache = atualizado;
     await renderBoletimComEspera();
   } catch (e) {
     alert("Erro: " + e.message);

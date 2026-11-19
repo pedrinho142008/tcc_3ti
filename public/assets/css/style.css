@@ -1389,3 +1389,66 @@ button.acao-btn,
 .nav-links a[href="/portal-aluno.html"] {
   order: 3;
 }
+
+/* ============================================================
+   MENU UNIFORME — TODOS OS LINKS COM ESTILO DE BOTÃO
+   ============================================================ */
+
+.nav-links a,
+.nav-links a.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    var(--azul-escuro),
+    var(--azul-medio)
+  );
+  color: #fff;
+  border: 0;
+  border-radius: var(--raio-pill);
+  box-shadow: 0 6px 16px rgba(42, 82, 152, 0.28);
+  text-decoration: none;
+  font-weight: 600;
+  transition:
+    background 0.18s,
+    color 0.18s,
+    transform 0.18s,
+    box-shadow 0.18s;
+}
+
+.nav-links a:hover,
+.nav-links a.cta:hover {
+  background: linear-gradient(
+    135deg,
+    var(--azul-medio),
+    var(--azul-escuro)
+  );
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(42, 82, 152, 0.38);
+}
+
+.nav-links a.active {
+  background: linear-gradient(
+    135deg,
+    var(--azul-escuro),
+    var(--azul-medio)
+  );
+  color: #fff;
+}
+
+/* Uniformidade no celular */
+@media (max-width: 760px) {
+  .nav-links a,
+  .nav-links a.cta {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 46px;
+    margin-top: 0;
+    padding: 14px 16px;
+    border-radius: 14px;
+    text-align: center;
+  }
+}

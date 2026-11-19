@@ -282,7 +282,7 @@ function animarDashboardTurma() {
 /* ============================================================
    MURAL SEMANAL DO ALUNO
    ============================================================ */
-export async function renderMuralSemanal() {
+export async function renderMuralSemanal(atividadesExternas = null) {
   const hoje = new Date();
   const dias = [];
 
@@ -293,8 +293,11 @@ export async function renderMuralSemanal() {
     dias.push(d);
   }
 
-  // Busca todas as atividades do aluno
-  const atividades = await api("/api/classroom/atividades").catch(() => []);
+  // Reutiliza os dados da Home quando já foram carregados.
+  // Mantém a consulta original como alternativa para outros usos.
+  const atividades = Array.isArray(atividadesExternas)
+    ? atividadesExternas
+    : await api("/api/classroom/atividades").catch(() => []);
 
   const nomesDias = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 

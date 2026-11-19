@@ -212,22 +212,28 @@ router.get("/boletim", async (req, res) => {
     }
   } catch {}
 
+  // Recupera o boletim pelo SigEduc quando os caches estão vazios.
   if (sessao?.client && !sessao._boletimFalhou) {
     try {
       const htmlBoletim = await sessao.client.boletim();
       const parsed = parseBoletim(htmlBoletim);
+
       if (parsed?.disciplinas?.length > 0) {
         for (const d of parsed.disciplinas) {
-          const meta = sessao.professores[d.nome] || {};
+          const meta = sessao.professores?.[d.nome] || {};
           d.professor = meta.professor || "—";
         }
+
         sessao.boletim = parsed;
+        sessao._boletimFalhou = false;
         return res.json(parsed);
       }
+
       sessao._boletimFalhou = true;
+      console.warn("⚠️ SigEduc retornou boletim sem disciplinas.");
     } catch (e) {
       sessao._boletimFalhou = true;
-      console.error(`❌ Erro busca:`, e.message);
+      console.error("❌ Erro ao buscar boletim:", e.message);
     }
   }
 
@@ -267,6 +273,18 @@ router.post("/boletim/recarregar", async (req, res) => {
       }
       sessao.boletim = parsed;
       sessao.criadoEm = Date.now();
+
+      // Atualiza o cache persistente sem atrasar a resposta ao aluno.
+      adminClient
+        .from("alunos")
+        .update({
+          boletim: parsed,
+          atualizado_em: new Date().toISOString()
+        })
+        .eq("matricula", payload.matricula)
+        .then(() => {})
+        .catch(() => {});
+
       res.json(parsed);
     } else {
       sessao._boletimFalhou = true;
